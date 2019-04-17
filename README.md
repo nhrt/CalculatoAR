@@ -1,6 +1,35 @@
 # CalculatoAR
 Developing a formula solving AR app
 
+Erste Notizen
+
+Anforderungen nach Prioritäten  
+Frameworks 
+Storys schreiben und Zeitaufwand einschätzen, Storys aufteilen  
+Git Repo anlegen  
+Git Funktionen lernen, Branchen anschauen, Konflikte  
+Mockup  
+  
+  
+Anforderungen  
+  
+Grundfunktionen:  
+Kamera Bild  
+Texterkennung   
++-*/ = erkennen und Ergbnis anzeigen ohne Perspektive  
+Bedingung: dunkle Schrift auf hellem Grund  
+
+Erweiterte Funktionen:  
+Perspektive beachten  
+Position des Ergebnisses  
+kompliziertere Formeln (Kurvendiskussion)  
+Bedingung: Farbkontraste erkennen  
+  
+niedrige Prio:  
+Teilen, speichern, Formeln parallel,   
+
+
+
 
 *************Git-Befehle********************************************
 
