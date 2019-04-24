@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">SWTP</string>
+    <string name="activity_name_detection">TFL Detect</string>
+</resources>
