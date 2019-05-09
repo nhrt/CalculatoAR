@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Typeface;
+import android.media.ImageReader;
 import android.util.Size;
 import android.util.TypedValue;
 
