@@ -28,16 +28,12 @@ import com.example.swtp.env.Logger;
 public class TFLiteObjectDetectionAPIModel implements Classifier {
     private static final Logger LOGGER = new Logger();
     private Vector<String> labels = new Vector<String>();
-    private static final float IMAGE_MEAN = 128.0f;
-    private static final float IMAGE_STD = 128.0f;
     // Number of threads in the java app
     private static final int NUM_THREADS = 4;
     private int inputSize;
     private int[] intValues;
     private ByteBuffer imgData;
     private Interpreter tfLite;
-    // Only return this many results.
-    private static final int NUM_DETECTIONS = 10;
     private boolean isModelQuantized;
     // outputLocations: array of shape [Batchsize, NUM_DETECTIONS,4]
     // contains the location of detected boxes
@@ -103,9 +99,9 @@ public class TFLiteObjectDetectionAPIModel implements Classifier {
         d.intValues = new int[d.inputSize * d.inputSize];
 
         d.tfLite.setNumThreads(NUM_THREADS);
-        d.outputLocations = new float[1][NUM_DETECTIONS][4];
-        d.outputClasses = new float[1][NUM_DETECTIONS];
-        d.outputScores = new float[1][NUM_DETECTIONS];
+        d.outputLocations = new float[1][Settings.NUM_DETECTIONS][4];
+        d.outputClasses = new float[1][Settings.NUM_DETECTIONS];
+        d.outputScores = new float[1][Settings.NUM_DETECTIONS];
         d.numDetections = new float[1];
         return d;
     }
@@ -134,6 +130,8 @@ public class TFLiteObjectDetectionAPIModel implements Classifier {
         bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
 
         imgData.rewind();
+        float mean = Settings.IMAGE_MEAN;
+        float std = Settings.IMAGE_STD;
         for (int i = 0; i < inputSize; ++i) {
             for (int j = 0; j < inputSize; ++j) {
                 int pixelValue = intValues[i * inputSize + j];
@@ -143,9 +141,9 @@ public class TFLiteObjectDetectionAPIModel implements Classifier {
                     imgData.put((byte) ((pixelValue >> 8) & 0xFF));
                     imgData.put((byte) (pixelValue & 0xFF));
                 } else { // Float model
-                    imgData.putFloat((((pixelValue >> 16) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
-                    imgData.putFloat((((pixelValue >> 8) & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
-                    imgData.putFloat(((pixelValue & 0xFF) - IMAGE_MEAN) / IMAGE_STD);
+                    imgData.putFloat((((pixelValue >> 16) & 0xFF) - mean) / std);
+                    imgData.putFloat((((pixelValue >> 8) & 0xFF) - mean) / std);
+                    imgData.putFloat(((pixelValue & 0xFF) - mean) / std);
                 }
             }
         }
@@ -153,9 +151,9 @@ public class TFLiteObjectDetectionAPIModel implements Classifier {
 
         // Copy the input data into TensorFlow.
         Trace.beginSection("feed");
-        outputLocations = new float[1][NUM_DETECTIONS][4];
-        outputClasses = new float[1][NUM_DETECTIONS];
-        outputScores = new float[1][NUM_DETECTIONS];
+        outputLocations = new float[1][Settings.NUM_DETECTIONS][4];
+        outputClasses = new float[1][Settings.NUM_DETECTIONS];
+        outputScores = new float[1][Settings.NUM_DETECTIONS];
         numDetections = new float[1];
 
         Object[] inputArray = {imgData};
@@ -173,8 +171,8 @@ public class TFLiteObjectDetectionAPIModel implements Classifier {
 
         // Show the best detections.
         // after scaling them back to the input size.
-        final ArrayList<Recognition> recognitions = new ArrayList<>(NUM_DETECTIONS);
-        for (int i = 0; i < NUM_DETECTIONS; ++i) {
+        final ArrayList<Recognition> recognitions = new ArrayList<>(Settings.NUM_DETECTIONS);
+        for (int i = 0; i < Settings.NUM_DETECTIONS; ++i) {
             final RectF detection =
                     new RectF(
                             outputLocations[0][i][1] * inputSize,

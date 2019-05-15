@@ -224,7 +224,7 @@ public abstract class CameraActivity extends AppCompatActivity
                         rgbBytes = new int[previewWidth * previewHeight];
                 }
                 try {
-                        final Image image = reader.acquireLatestImage();
+                        final Image image = reader.acquireNextImage();
 
                         if (image == null) {
                                 return;
@@ -371,4 +371,24 @@ public abstract class CameraActivity extends AppCompatActivity
         protected abstract int getLayoutId();
 
         protected abstract void processImage();
+
+        protected void readyForNextImage() {
+                if (postInferenceCallback != null) {
+                        postInferenceCallback.run();
+                }
+        }
+    protected int[] getRgbBytes() {
+        imageConverter.run();
+        return rgbBytes;
+    }
+    protected byte[] getLuminance() {
+        return yuvBytes[0];
+    }
+    public void requestRender() {
+        final OverlayView overlay = (OverlayView) findViewById(R.id.debug_overlay);
+        if (overlay != null) {
+            overlay.postInvalidate();
+        }
+    }
+
 }
