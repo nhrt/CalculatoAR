@@ -39,7 +39,7 @@ public class DetectorActivity extends CameraActivity{
 
     Classifier detector;
     private static final boolean SAVE_PREVIEW_BITMAP = false;
-    private static final boolean TF_OD_API_IS_QUANTIZED = true;
+    private static final boolean TF_OD_API_IS_QUANTIZED = false;
     private boolean computingDetection = false;
     private byte[] luminanceCopy;
     private long timestamp = 0;
@@ -52,7 +52,7 @@ public class DetectorActivity extends CameraActivity{
 
     @Override
     protected int getLayoutId() {
-        return R.layout.camera_connection_fragment;
+        return R.layout.camera_connection_fragment_tracking;
     }
 
 
@@ -105,6 +105,7 @@ public class DetectorActivity extends CameraActivity{
         frameToCropTransform.invert(cropToFrameTransform);
 
         trackingOverlay = findViewById(R.id.tracking_overlay);
+
         if(trackingOverlay != null){
             trackingOverlay.addCallback(
                     new OverlayView.DrawCallback() {
@@ -113,6 +114,8 @@ public class DetectorActivity extends CameraActivity{
                             tracker.draw(canvas);
                         }
                     });
+        }else{
+            LOGGER.i("trackingOverlay is null");
         }
     }
 
@@ -173,6 +176,7 @@ public class DetectorActivity extends CameraActivity{
                         }
 
                         tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
+
                         trackingOverlay.postInvalidate();
 
                         requestRender();

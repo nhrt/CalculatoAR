@@ -48,6 +48,7 @@ public class TFLiteObjectDetectionAPIModel implements Classifier {
     // contains the number of detected boxes
     private float[] numDetections;
 
+
     private TFLiteObjectDetectionAPIModel() {}
     /**
      * Initializes a native TensorFlow session for classifying images.
@@ -65,12 +66,10 @@ public class TFLiteObjectDetectionAPIModel implements Classifier {
             final int inputSize,
             final boolean isQuantized)
             throws IOException {
-        final TFLiteObjectDetectionAPIModel d = new TFLiteObjectDetectionAPIModel();
 
-        InputStream labelsInput = null;
-        labelsInput = assetManager.open(labelFilename);
-        BufferedReader br = null;
-        br = new BufferedReader(new InputStreamReader(labelsInput));
+        final TFLiteObjectDetectionAPIModel d = new TFLiteObjectDetectionAPIModel();
+        InputStream labelsInput = assetManager.open(labelFilename);
+        BufferedReader br = new BufferedReader(new InputStreamReader(labelsInput));
         String line;
         while ((line = br.readLine()) != null) {
             LOGGER.w(line);
@@ -88,12 +87,14 @@ public class TFLiteObjectDetectionAPIModel implements Classifier {
 
         d.isModelQuantized = isQuantized;
         // Pre-allocate buffers.
+
         int numBytesPerChannel;
         if (isQuantized) {
             numBytesPerChannel = 1; // Quantized
         } else {
             numBytesPerChannel = 4; // Floating point
         }
+
         d.imgData = ByteBuffer.allocateDirect(1 * d.inputSize * d.inputSize * 3 * numBytesPerChannel);
         d.imgData.order(ByteOrder.nativeOrder());
         d.intValues = new int[d.inputSize * d.inputSize];
@@ -164,9 +165,14 @@ public class TFLiteObjectDetectionAPIModel implements Classifier {
         outputMap.put(3, numDetections);
         Trace.endSection();
 
+        //@toDo: Musste die outputmap zu tmpMap ändern damit die "shape" stimmt führt aber dazu, dass die detections nicht funktionieren
+        Map<Integer,Object> tmpMap = new HashMap<>();
+        tmpMap.put(0,outputClasses);
+
         // Run the inference call.
         Trace.beginSection("run");
-        tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
+        tfLite.runForMultipleInputsOutputs(inputArray, tmpMap);
+
         Trace.endSection();
 
         // Show the best detections.
