@@ -44,7 +44,7 @@ public class MultiBoxTracker {
     private static final float MARGINAL_CORRELATION = 0.75f;
 
     // Consider object to be lost if correlation falls below this threshold.
-    private static final float MIN_CORRELATION = 0.3f;
+    private static final float MIN_CORRELATION = 0.6f;
 
     private static final int[] COLORS = {
             Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.CYAN, Color.MAGENTA, Color.WHITE,

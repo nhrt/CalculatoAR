@@ -95,7 +95,7 @@ public class TFLiteObjectDetectionAPIModel implements Classifier {
             numBytesPerChannel = 4; // Floating point
         }
 
-        d.imgData = ByteBuffer.allocateDirect(1 * d.inputSize * d.inputSize * 3 * numBytesPerChannel);
+        d.imgData = ByteBuffer.allocateDirect(1 * inputSize * inputSize * 3 * numBytesPerChannel);
         d.imgData.order(ByteOrder.nativeOrder());
         d.intValues = new int[d.inputSize * d.inputSize];
 
@@ -165,13 +165,9 @@ public class TFLiteObjectDetectionAPIModel implements Classifier {
         outputMap.put(3, numDetections);
         Trace.endSection();
 
-        //@toDo: Musste die outputmap zu tmpMap ändern damit die "shape" stimmt führt aber dazu, dass die detections nicht funktionieren
-        Map<Integer,Object> tmpMap = new HashMap<>();
-        tmpMap.put(0,outputClasses);
-
         // Run the inference call.
         Trace.beginSection("run");
-        tfLite.runForMultipleInputsOutputs(inputArray, tmpMap);
+        tfLite.runForMultipleInputsOutputs(inputArray, outputMap);
 
         Trace.endSection();
 

@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-
+//@toDo: Die Recognitions sind an der falschen Stelle
 public class DetectorActivity extends CameraActivity{
     private static final Logger LOGGER = new Logger();
     private static final boolean MAINTAIN_ASPECT = true;
@@ -39,7 +39,6 @@ public class DetectorActivity extends CameraActivity{
 
     Classifier detector;
     private static final boolean SAVE_PREVIEW_BITMAP = false;
-    private static final boolean TF_OD_API_IS_QUANTIZED = false;
     private boolean computingDetection = false;
     private byte[] luminanceCopy;
     private long timestamp = 0;
@@ -74,7 +73,7 @@ public class DetectorActivity extends CameraActivity{
                     Settings.TF_OD_API_MODEL_FILE,
                     Settings.TF_OD_API_LABELS_FILE,
                     Settings.TF_OD_API_INPUT_SIZE,
-                    TF_OD_API_IS_QUANTIZED);
+                    Settings.TF_OD_API_IS_QUANTIZED);
             cropSize = Settings.TF_OD_API_INPUT_SIZE;
         }catch (IOException e){
             LOGGER.e("Exception initializing classifier!", e);
@@ -161,29 +160,26 @@ public class DetectorActivity extends CameraActivity{
                         paint.setStrokeWidth(2.0f);
 
 
-                        final List<Classifier.Recognition> mappedRecognitions =
-                                new LinkedList<Classifier.Recognition>();
+                        final List<Classifier.Recognition> mappedRecognitions = new LinkedList<>();
+                        StringBuilder sb = new StringBuilder();
 
                         for (final Classifier.Recognition result : results) {
                             final RectF location = result.getLocation();
+                            if(result.getConfidence() > 0.5) sb.append(result.getTitle() + " ");
                             if (location != null && result.getConfidence() >= Settings.MINIMUM_CONFIDENCE_TF_OD_API) {
                                 canvas.drawRect(location, paint);
-
                                 cropToFrameTransform.mapRect(location);
                                 result.setLocation(location);
                                 mappedRecognitions.add(result);
                             }
                         }
-
+                        LOGGER.i("Detected: " + sb);
                         tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
-
                         trackingOverlay.postInvalidate();
-
                         requestRender();
                         computingDetection = false;
                     }
                 });
-
     }
 
 
