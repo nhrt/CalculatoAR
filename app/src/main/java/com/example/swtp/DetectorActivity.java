@@ -7,6 +7,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.media.Image;
 import android.os.SystemClock;
 import android.util.Size;
 import android.util.TypedValue;
@@ -88,6 +89,7 @@ public class DetectorActivity extends CameraActivity{
         previewHeight = size.getHeight();
 
         sensorOrientation = rotation - getScreenOrientation();
+        LOGGER.i("orientation: " + sensorOrientation);
         LOGGER.i("Camera orientation relative to screen canvas: %d", sensorOrientation);
 
         LOGGER.i("Initializing at size %dx%d", previewWidth, previewHeight);
@@ -96,7 +98,7 @@ public class DetectorActivity extends CameraActivity{
 
         frameToCropTransform =
                 ImageUtils.getTransformationMatrix(
-                        previewWidth, previewHeight,
+                        previewHeight, previewWidth,
                         cropSize, cropSize,
                         sensorOrientation, MAINTAIN_ASPECT);
 
@@ -168,7 +170,8 @@ public class DetectorActivity extends CameraActivity{
                             if(result.getConfidence() > 0.5) sb.append(result.getTitle() + " ");
                             if (location != null && result.getConfidence() >= Settings.MINIMUM_CONFIDENCE_TF_OD_API) {
                                 canvas.drawRect(location, paint);
-                                cropToFrameTransform.mapRect(location);
+                                //cropToFrameTransform.mapRect(location);
+                                cropCopyFrame(location);
                                 result.setLocation(location);
                                 mappedRecognitions.add(result);
                             }
@@ -180,6 +183,20 @@ public class DetectorActivity extends CameraActivity{
                         computingDetection = false;
                     }
                 });
+    }
+
+
+    /*
+    Umrechnung der Location der erkannten Objekte. Von 300 x 300 auf die Preview_Size
+    @toDo: Verfeinern der Berechnung. Matrixmultiplikation funktioniert nicht => einfachste Lösung: Dreisatz, bessere Lösung: Matrix
+     */
+    private void cropCopyFrame(RectF location) {
+        int left_right = Settings.DESIRED_PREVIEW_SIZE.getHeight();
+        int bottom_top = Settings.DESIRED_PREVIEW_SIZE.getWidth();
+        location.left = location.left / Settings.TF_OD_API_INPUT_SIZE * left_right - 25;
+        location.right = location.right / Settings.TF_OD_API_INPUT_SIZE * left_right + 25;
+        location.top = location.top / Settings.TF_OD_API_INPUT_SIZE * bottom_top - 100;
+        location.bottom = location.bottom / Settings.TF_OD_API_INPUT_SIZE * bottom_top;
     }
 
 

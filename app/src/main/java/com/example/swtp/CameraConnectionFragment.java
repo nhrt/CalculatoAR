@@ -1,4 +1,6 @@
 package com.example.swtp;
+
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -7,6 +9,7 @@ import android.app.DialogFragment;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
@@ -26,6 +29,7 @@ import android.media.ImageReader.OnImageAvailableListener;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.support.v4.app.ActivityCompat;
 import android.text.TextUtils;
 import android.util.Size;
 import android.util.SparseIntArray;
@@ -45,8 +49,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
 import com.example.swtp.customview.AutoFitTextureView;
 
+@SuppressLint("ValidFragment")
 public class CameraConnectionFragment extends Fragment {
     private static final Logger LOGGER = new Logger();
 
@@ -84,13 +90,15 @@ public class CameraConnectionFragment extends Fragment {
                 public void onCaptureProgressed(
                         final CameraCaptureSession session,
                         final CaptureRequest request,
-                        final CaptureResult partialResult) {}
+                        final CaptureResult partialResult) {
+                }
 
                 @Override
                 public void onCaptureCompleted(
                         final CameraCaptureSession session,
                         final CaptureRequest request,
-                        final TotalCaptureResult result) {}
+                        final TotalCaptureResult result) {
+                }
             };
     /** ID of the current {@link CameraDevice}. */
     private String cameraId;
@@ -132,7 +140,8 @@ public class CameraConnectionFragment extends Fragment {
                 }
 
                 @Override
-                public void onSurfaceTextureUpdated(final SurfaceTexture texture) {}
+                public void onSurfaceTextureUpdated(final SurfaceTexture texture) {
+                }
             };
     /** An {@link ImageReader} that handles preview frame capture. */
     private ImageReader previewReader;
@@ -345,6 +354,7 @@ public class CameraConnectionFragment extends Fragment {
     }
 
     /** Opens the camera specified by {@link CameraConnectionFragment#cameraId}. */
+    @SuppressLint("MissingPermission")
     private void openCamera(final int width, final int height) {
         setUpCameraOutputs();
         configureTransform(width, height);

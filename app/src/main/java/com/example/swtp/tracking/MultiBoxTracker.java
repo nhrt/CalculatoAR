@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Queue;
 
 import com.example.swtp.Classifier.Recognition;
+import com.example.swtp.Settings;
 import com.example.swtp.env.ImageUtils;
 import com.example.swtp.env.Logger;
 import com.example.swtp.env.BorderedText;
@@ -44,7 +45,7 @@ public class MultiBoxTracker {
     private static final float MARGINAL_CORRELATION = 0.75f;
 
     // Consider object to be lost if correlation falls below this threshold.
-    private static final float MIN_CORRELATION = 0.6f;
+    private static final float MIN_CORRELATION = Settings.MINIMUM_CONFIDENCE_TF_OD_API;
 
     private static final int[] COLORS = {
             Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.CYAN, Color.MAGENTA, Color.WHITE,
