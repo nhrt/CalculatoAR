@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-//@toDo: Die Recognitions sind an der falschen Stelle
 public class DetectorActivity extends CameraActivity{
     private static final Logger LOGGER = new Logger();
     private static final boolean MAINTAIN_ASPECT = true;
@@ -43,6 +42,7 @@ public class DetectorActivity extends CameraActivity{
     private boolean computingDetection = false;
     private byte[] luminanceCopy;
     private long timestamp = 0;
+    private long lastTimestamp = 0;
 
     @Override
     protected Size getDesiredPreviewFrameSize() {
@@ -98,12 +98,18 @@ public class DetectorActivity extends CameraActivity{
 
         frameToCropTransform =
                 ImageUtils.getTransformationMatrix(
-                        previewHeight, previewWidth,
+                        previewWidth, previewHeight,
                         cropSize, cropSize,
                         sensorOrientation, MAINTAIN_ASPECT);
 
-        cropToFrameTransform = new Matrix();
-        frameToCropTransform.invert(cropToFrameTransform);
+        cropToFrameTransform =
+                ImageUtils.getTransformationMatrix(
+                        cropSize, cropSize,
+                        previewHeight, previewWidth,
+                        0, MAINTAIN_ASPECT);
+
+       // cropToFrameTransform = new Matrix();
+        //rameToCropTransform.invert(cropToFrameTransform);
 
         trackingOverlay = findViewById(R.id.tracking_overlay);
 
@@ -125,6 +131,9 @@ public class DetectorActivity extends CameraActivity{
         ++timestamp;
         byte[] originalLuminance = getLuminance();
         final long currTimestamp = timestamp;
+
+        lastTimestamp = currTimestamp;
+
         if(computingDetection){
             readyForNextImage();
             return;
@@ -135,6 +144,7 @@ public class DetectorActivity extends CameraActivity{
             luminanceCopy = new byte[originalLuminance.length];
         }
         System.arraycopy(originalLuminance, 0, luminanceCopy, 0, originalLuminance.length);
+
         readyForNextImage();
 
         final Canvas canvas = new Canvas(croppedBitmap);
@@ -144,60 +154,45 @@ public class DetectorActivity extends CameraActivity{
             ImageUtils.saveBitmap(croppedBitmap);
         }
 
+            runInBackground(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            LOGGER.i("Running detection on image " + currTimestamp);
+                            final long startTime = SystemClock.uptimeMillis();
+                            final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
+                            lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
-        runInBackground(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        LOGGER.i("Running detection on image " + currTimestamp);
-                        final long startTime = SystemClock.uptimeMillis();
-                        final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
-                        lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
-
-                        cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
-                        final Canvas canvas = new Canvas(cropCopyBitmap);
-                        final Paint paint = new Paint();
-                        paint.setColor(Color.RED);
-                        paint.setStyle(Paint.Style.STROKE);
-                        paint.setStrokeWidth(2.0f);
+                            cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
+                            final Canvas canvas = new Canvas(cropCopyBitmap);
+                            final Paint paint = new Paint();
+                            paint.setColor(Color.RED);
+                            paint.setStyle(Paint.Style.STROKE);
+                            paint.setStrokeWidth(2.0f);
 
 
-                        final List<Classifier.Recognition> mappedRecognitions = new LinkedList<>();
-                        StringBuilder sb = new StringBuilder();
+                            final List<Classifier.Recognition> mappedRecognitions = new LinkedList<>();
+                            StringBuilder sb = new StringBuilder();
 
-                        for (final Classifier.Recognition result : results) {
-                            final RectF location = result.getLocation();
-                            if(result.getConfidence() > 0.5) sb.append(result.getTitle() + " ");
-                            if (location != null && result.getConfidence() >= Settings.MINIMUM_CONFIDENCE_TF_OD_API) {
-                                canvas.drawRect(location, paint);
-                                //cropToFrameTransform.mapRect(location);
-                                cropCopyFrame(location);
-                                result.setLocation(location);
-                                mappedRecognitions.add(result);
+                            for (final Classifier.Recognition result : results) {
+                                final RectF location = result.getLocation();
+                                if (location != null && result.getConfidence() >= Settings.MINIMUM_CONFIDENCE_TF_OD_API) {
+                                    canvas.drawRect(location, paint);
+                                    cropToFrameTransform.mapRect(location);
+                                    location.offset(-75,300);
+                                    result.setLocation(location);
+                                    mappedRecognitions.add(result);
+                                }
                             }
+
+                            if(Settings.SHOW_RECTS){
+                                tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
+                                trackingOverlay.postInvalidate();
+                            }
+
+                            requestRender();
+                            computingDetection = false;
                         }
-                        LOGGER.i("Detected: " + sb);
-                        tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
-                        trackingOverlay.postInvalidate();
-                        requestRender();
-                        computingDetection = false;
-                    }
-                });
+                    });
     }
-
-
-    /*
-    Umrechnung der Location der erkannten Objekte. Von 300 x 300 auf die Preview_Size
-    @toDo: Verfeinern der Berechnung. Matrixmultiplikation funktioniert nicht => einfachste Lösung: Dreisatz, bessere Lösung: Matrix
-     */
-    private void cropCopyFrame(RectF location) {
-        int left_right = Settings.DESIRED_PREVIEW_SIZE.getHeight();
-        int bottom_top = Settings.DESIRED_PREVIEW_SIZE.getWidth();
-        location.left = location.left / Settings.TF_OD_API_INPUT_SIZE * left_right - 25;
-        location.right = location.right / Settings.TF_OD_API_INPUT_SIZE * left_right + 25;
-        location.top = location.top / Settings.TF_OD_API_INPUT_SIZE * bottom_top - 100;
-        location.bottom = location.bottom / Settings.TF_OD_API_INPUT_SIZE * bottom_top;
-    }
-
-
 }
