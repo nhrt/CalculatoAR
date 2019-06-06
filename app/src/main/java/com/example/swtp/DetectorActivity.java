@@ -7,7 +7,6 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
-import android.media.Image;
 import android.os.SystemClock;
 import android.util.Size;
 import android.util.TypedValue;
@@ -29,7 +28,6 @@ public class DetectorActivity extends CameraActivity{
     private BorderedText borderedText;
     private MultiBoxTracker tracker;
     private Integer sensorOrientation;
-    private long lastProcessingTimeMs;
     private Bitmap rgbFrameBitmap = null;
     private Bitmap croppedBitmap = null;
     private Bitmap cropCopyBitmap = null;
@@ -43,6 +41,7 @@ public class DetectorActivity extends CameraActivity{
     private byte[] luminanceCopy;
     private long timestamp = 0;
     private long lastTimestamp = 0;
+    private RecognitionParser recognitionParser = new RecognitionParser();
 
     @Override
     protected Size getDesiredPreviewFrameSize() {
@@ -161,7 +160,6 @@ public class DetectorActivity extends CameraActivity{
                             LOGGER.i("Running detection on image " + currTimestamp);
                             final long startTime = SystemClock.uptimeMillis();
                             final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
-                            lastProcessingTimeMs = SystemClock.uptimeMillis() - startTime;
 
                             cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
                             final Canvas canvas = new Canvas(cropCopyBitmap);
@@ -172,7 +170,6 @@ public class DetectorActivity extends CameraActivity{
 
 
                             final List<Classifier.Recognition> mappedRecognitions = new LinkedList<>();
-                            StringBuilder sb = new StringBuilder();
 
                             for (final Classifier.Recognition result : results) {
                                 final RectF location = result.getLocation();
@@ -184,12 +181,11 @@ public class DetectorActivity extends CameraActivity{
                                     mappedRecognitions.add(result);
                                 }
                             }
-
                             if(Settings.SHOW_RECTS){
                                 tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
                                 trackingOverlay.postInvalidate();
                             }
-
+                            LOGGER.i(recognitionParser.parseRecognitions(mappedRecognitions));
                             requestRender();
                             computingDetection = false;
                         }
