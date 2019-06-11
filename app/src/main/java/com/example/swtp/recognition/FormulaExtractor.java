@@ -13,22 +13,23 @@ import java.util.ListIterator;
 
 
 
-public class FormulaRecognition {
+public class FormulaExtractor {
     private static final Logger LOGGER = new Logger();
-    public List<List<Classifier.Recognition>> parseRecognitions(List<Classifier.Recognition> mappedRecognitions){
-        LOGGER.i("Start Parsing Recognitions");
-        List<String> result = new ArrayList<>();
-        List<List<Classifier.Recognition>> formulas = getFormulas(mappedRecognitions);
-        for(List<Classifier.Recognition> formula : formulas){
-            result.add(formulaToString(formula));
-        }
-        LOGGER.i("Return Parsed Recognitions");
-        return result;
-    }
 
-    private List<List<Classifier.Recognition>> getFormulas(List<Classifier.Recognition> mappedRecognitions){
+    /*
+     Extract takes a List of Recognitions and extract every Recognition which is inside of a formula
+     Input-Type: List<Classifier.Recognition> mappedRecognitions
+     Return-Type:  List<List<Classifier.Recognition>> "A list of a list of objects belonging to a formula
+     -> every List-Item is a formula
+     -> the first element of every formula is the formula object itself
+     -> every object which is not in a formula gets deleted
+     */
+    public List<List<Classifier.Recognition>> extract(List<Classifier.Recognition> mappedRecognitions){
+        //LOGGER.i("Start Extracting Recognitions");
         List<List<Classifier.Recognition>> formulas = new ArrayList<>();
 
+
+        //Find all "Formula" objects in the detections
         ListIterator<Classifier.Recognition> iterator = mappedRecognitions.listIterator();
         List<Classifier.Recognition> formula;
         Classifier.Recognition tmp;
@@ -41,6 +42,7 @@ public class FormulaRecognition {
             }
         }
 
+        //order objects to fitting formulas
         iterator = mappedRecognitions.listIterator();
         RectF locationFormula;
         while (iterator.hasNext()){
@@ -48,30 +50,27 @@ public class FormulaRecognition {
             if(!tmp.getTitle().equals("formula")){
                 for (int i = 0; i < formulas.size(); i++) {
                     locationFormula = formulas.get(i).get(0).getLocation();
-                    if(tmp.getLocation().centerY() > locationFormula.top && tmp.getLocation().centerY() < locationFormula.bottom && tmp.getLocation().centerX() > locationFormula.left && tmp.getLocation().centerX() < locationFormula.right){
+                    //Compare the middle of the object to to outer-bound of the formula
+                    // -> If inside of this formula-bounds then arrange to the formula
+                    int centerY = (int)tmp.getLocation().centerY();
+                    int centerX = (int)tmp.getLocation().centerX();
+                    if(locationFormula.contains(centerX,centerY)){
                         formulas.get(i).add(tmp);
                     }
                 }
             }
         }
 
+        //Sort the formula horizontal
         for (int i = 0; i < formulas.size(); i++) {
-            sortHoritzontal(formulas.get(i));
+            Collections.sort(formulas.get(i), new Comparator<Classifier.Recognition>() {
+                @Override
+                public int compare(Classifier.Recognition o1, Classifier.Recognition o2) {
+                    return (int)(o1.getLocation().left - o2.getLocation().left);
+                }
+            });
         }
+        // LOGGER.i("Return Extracted Recognitions");
         return formulas;
     }
-
-    private void sortHoritzontal(List<Classifier.Recognition> mappedRecognitions){
-        Collections.sort(mappedRecognitions, new Comparator<Classifier.Recognition>() {
-            @Override
-            public int compare(Classifier.Recognition o1, Classifier.Recognition o2) {
-                return (int)(o1.getLocation().left - o2.getLocation().left);
-            }
-        });
-    }
-
-
-
-
-
 }

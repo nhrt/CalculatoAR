@@ -15,6 +15,8 @@ import android.widget.Toast;
 import com.example.swtp.env.BorderedText;
 import com.example.swtp.env.ImageUtils;
 import com.example.swtp.env.Logger;
+import com.example.swtp.recognition.FormulaExtractor;
+import com.example.swtp.recognition.Parser;
 import com.example.swtp.tracking.MultiBoxTracker;
 import java.io.IOException;
 import java.util.LinkedList;
@@ -41,7 +43,8 @@ public class DetectorActivity extends CameraActivity{
     private byte[] luminanceCopy;
     private long timestamp = 0;
     private long lastTimestamp = 0;
-    private RecognitionParser recognitionParser = new RecognitionParser();
+    private FormulaExtractor formulaExtractor = new FormulaExtractor();
+    private Parser parser = new Parser();
 
     @Override
     protected Size getDesiredPreviewFrameSize() {
@@ -158,7 +161,6 @@ public class DetectorActivity extends CameraActivity{
                         @Override
                         public void run() {
                             LOGGER.i("Running detection on image " + currTimestamp);
-                            final long startTime = SystemClock.uptimeMillis();
                             final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
 
                             cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
@@ -185,7 +187,12 @@ public class DetectorActivity extends CameraActivity{
                                 tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
                                 trackingOverlay.postInvalidate();
                             }
-                            LOGGER.i(recognitionParser.parseRecognitions(mappedRecognitions));
+                            //Extract the formulas from the Recognitions.
+                            List<List<Classifier.Recognition>> formulas = formulaExtractor.extract(mappedRecognitions);
+                            //Show Results
+                            for(List<Classifier.Recognition> formula : formulas){
+                                LOGGER.i(parser.formulaToString(formula));
+                            }
                             requestRender();
                             computingDetection = false;
                         }
