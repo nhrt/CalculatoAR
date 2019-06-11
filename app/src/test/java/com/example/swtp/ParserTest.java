@@ -2,6 +2,7 @@ package com.example.swtp;
 
 import com.example.swtp.recognition.Parser;
 
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,5 +48,41 @@ public class ParserTest {
     @Test
     public void recognitionsToString_isCorrect(){
         assertEquals("0123456789+-*=/",parser.formulaToString(formula));
+    }
+
+    @Test
+    public void evaluation_isCorrect(){
+        List<Classifier.Recognition> smallFormula = new ArrayList<>();
+        smallFormula.add(formula.get(0));
+        smallFormula.add(formula.get(2));
+        smallFormula.add(formula.get(11));
+        smallFormula.add(formula.get(3));
+        smallFormula.add(formula.get(14));
+        assertEquals("1+2=",parser.formulaToString(smallFormula));
+        assertEquals(3.0,parser.parse(smallFormula),0.99);
+        smallFormula = new ArrayList<>();
+        smallFormula.add(formula.get(0));
+        smallFormula.add(formula.get(2));
+        smallFormula.add(formula.get(15));
+        smallFormula.add(formula.get(3));
+        smallFormula.add(formula.get(14));
+        assertEquals("1/2=",parser.formulaToString(smallFormula));
+        assertEquals(0.5,parser.parse(smallFormula),0.99);
+        smallFormula = new ArrayList<>();
+        smallFormula.add(formula.get(0));
+        smallFormula.add(formula.get(2));
+        smallFormula.add(formula.get(13));
+        smallFormula.add(formula.get(3));
+        smallFormula.add(formula.get(14));
+        assertEquals("1*2=",parser.formulaToString(smallFormula));
+        assertEquals(2.0,parser.parse(smallFormula),0.99);
+        smallFormula = new ArrayList<>();
+        smallFormula.add(formula.get(0));
+        smallFormula.add(formula.get(2));
+        smallFormula.add(formula.get(12));
+        smallFormula.add(formula.get(3));
+        smallFormula.add(formula.get(14));
+        assertEquals("1-2=",parser.formulaToString(smallFormula));
+        assertEquals(-1.0,parser.parse(smallFormula),0.99);
     }
 }

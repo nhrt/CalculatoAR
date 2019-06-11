@@ -11,6 +11,6 @@ public final class Settings {
     static final float IMAGE_MEAN = 128.0f;
     static final float IMAGE_STD = 128.0f;
     static final boolean TF_OD_API_IS_QUANTIZED = false;
-    static final int NUM_DETECTIONS = 10;
+    static final int NUM_DETECTIONS = 50;
     static boolean SHOW_RECTS = true;
 }

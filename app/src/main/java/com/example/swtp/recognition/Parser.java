@@ -2,10 +2,23 @@ package com.example.swtp.recognition;
 
 import com.example.swtp.Classifier;
 
+import org.mariuszgromada.math.mxparser.Expression;
+
 import java.util.List;
 import java.util.ListIterator;
 
 public class Parser {
+
+    public double parse(List<Classifier.Recognition> mappedRecognitions){
+        String string = formulaToString(mappedRecognitions);
+        StringBuilder formula = new StringBuilder();
+        if(string.endsWith("=")){
+            formula.append(string.substring(0,string.length() - 1));
+        }
+
+        Expression expression = new Expression(formula.toString());
+        return expression.calculate();
+    }
 
     public String formulaToString(List<Classifier.Recognition> mappedRecognitions){
         ListIterator<Classifier.Recognition> iterator = mappedRecognitions.listIterator();

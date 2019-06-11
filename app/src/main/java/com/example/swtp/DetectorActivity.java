@@ -191,7 +191,7 @@ public class DetectorActivity extends CameraActivity{
                             List<List<Classifier.Recognition>> formulas = formulaExtractor.extract(mappedRecognitions);
                             //Show Results
                             for(List<Classifier.Recognition> formula : formulas){
-                                LOGGER.i(parser.formulaToString(formula));
+                                LOGGER.i(parser.formulaToString(formula) + "=" + parser.parse(formula));
                             }
                             requestRender();
                             computingDetection = false;
