@@ -14,7 +14,6 @@ import static org.junit.Assert.*;
 
 public class ParserTest {
 
-
     List<Classifier.Recognition> formula = new ArrayList<>();
     Parser parser = new Parser();
     String[] labels = {"formula","zero","one","two","three","four","five","six","seven","eight","nine","plus","minus","mul","equals","div"};

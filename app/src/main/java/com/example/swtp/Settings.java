@@ -3,7 +3,7 @@ package com.example.swtp;
 import android.util.Size;
 
 public final class Settings {
-    static final String TF_OD_API_MODEL_FILE = "retrained_graph.tflite";
+    static final String TF_OD_API_MODEL_FILE = "retrained_graph_v2.tflite";
     static final String TF_OD_API_LABELS_FILE = "retrained_labels.txt";
     static final Size DESIRED_PREVIEW_SIZE = new Size(1280, 720);
     static public  final float MINIMUM_CONFIDENCE_TF_OD_API = 0.2f;
