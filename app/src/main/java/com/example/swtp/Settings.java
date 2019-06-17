@@ -13,4 +13,5 @@ public final class Settings {
     static final boolean TF_OD_API_IS_QUANTIZED = false;
     static final int NUM_DETECTIONS = 50;
     static boolean SHOW_RECTS = true;
+    static final int DETECTION_INTERVAL_SECONDS = 3;
 }

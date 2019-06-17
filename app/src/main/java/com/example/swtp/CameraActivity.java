@@ -210,7 +210,8 @@ public abstract class CameraActivity extends AppCompatActivity
                                         isProcessingFrame = false;
                                 }
                         };
-                processImage();
+                //processImage();
+                processLoop();
         }
 
         /** Callback for Camera2 API */
@@ -268,7 +269,8 @@ public abstract class CameraActivity extends AppCompatActivity
                                         }
                                 };
 
-                        processImage();
+                        processLoop();
+                        //processImage();
                 } catch (final Exception e) {
                         LOGGER.e(e, "Exception!");
                         Trace.endSection();
@@ -364,6 +366,8 @@ public abstract class CameraActivity extends AppCompatActivity
                 }
         }
 
+
+
         protected abstract Size getDesiredPreviewFrameSize();
 
         protected abstract void onPreviewSizeChosen(final Size size, final int rotation);
@@ -371,6 +375,8 @@ public abstract class CameraActivity extends AppCompatActivity
         protected abstract int getLayoutId();
 
         protected abstract void processImage();
+
+        protected abstract void processLoop();
 
         protected void readyForNextImage() {
                 if (postInferenceCallback != null) {

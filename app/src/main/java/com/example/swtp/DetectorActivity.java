@@ -7,6 +7,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Size;
 import android.util.TypedValue;
@@ -19,6 +20,7 @@ import com.example.swtp.recognition.FormulaExtractor;
 import com.example.swtp.recognition.Parser;
 import com.example.swtp.tracking.MultiBoxTracker;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -45,6 +47,7 @@ public class DetectorActivity extends CameraActivity{
     private long lastTimestamp = 0;
     private FormulaExtractor formulaExtractor = new FormulaExtractor();
     private Parser parser = new Parser();
+    private int counter = 0;
 
     @Override
     protected Size getDesiredPreviewFrameSize() {
@@ -110,9 +113,6 @@ public class DetectorActivity extends CameraActivity{
                         previewHeight, previewWidth,
                         0, MAINTAIN_ASPECT);
 
-       // cropToFrameTransform = new Matrix();
-        //rameToCropTransform.invert(cropToFrameTransform);
-
         trackingOverlay = findViewById(R.id.tracking_overlay);
 
         if(trackingOverlay != null){
@@ -130,24 +130,19 @@ public class DetectorActivity extends CameraActivity{
 
     @Override
     protected void processImage() {
+
         ++timestamp;
         byte[] originalLuminance = getLuminance();
         final long currTimestamp = timestamp;
 
         lastTimestamp = currTimestamp;
 
-        if(computingDetection){
-            readyForNextImage();
-            return;
-        }
         computingDetection = true;
         rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
         if (luminanceCopy == null) {
             luminanceCopy = new byte[originalLuminance.length];
         }
         System.arraycopy(originalLuminance, 0, luminanceCopy, 0, originalLuminance.length);
-
-        readyForNextImage();
 
         final Canvas canvas = new Canvas(croppedBitmap);
         canvas.drawBitmap(rgbFrameBitmap, frameToCropTransform, null);
@@ -198,4 +193,20 @@ public class DetectorActivity extends CameraActivity{
                         }
                     });
     }
+
+    protected void processLoop(){
+        if(counter < 3){
+            processImage();
+            counter++;
+            readyForNextImage();
+        }else{
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    counter = 0;
+                    readyForNextImage();
+                }}, Settings.DETECTION_INTERVAL_SECONDS * 1000);
+        }
+    }
+
 }
