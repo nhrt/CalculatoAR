@@ -50,6 +50,19 @@ public class ParserTest {
     }
 
     @Test
+    public void formulaCorrection_isCorrect(){
+        List<Classifier.Recognition> smallFormula = new ArrayList<>();
+        smallFormula.add(formula.get(0));
+        smallFormula.add(formula.get(2));
+        smallFormula.add(formula.get(11));
+        smallFormula.add(formula.get(3));
+        smallFormula.add(formula.get(12));
+        assertEquals("1+2-",parser.formulaToString(smallFormula));
+        parser.correctFormula(smallFormula);
+        assertEquals("1+2=",parser.formulaToString(smallFormula));
+    }
+
+    @Test
     public void evaluation_isCorrect(){
         List<Classifier.Recognition> smallFormula = new ArrayList<>();
         smallFormula.add(formula.get(0));

@@ -48,6 +48,7 @@ public interface Classifier {
             return title;
         }
 
+
         public Float getConfidence() {
             return confidence;
         }

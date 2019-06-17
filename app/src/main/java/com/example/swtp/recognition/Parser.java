@@ -10,7 +10,7 @@ import java.util.ListIterator;
 public class Parser {
 
     public double parse(List<Classifier.Recognition> mappedRecognitions){
-        String string = formulaToString(mappedRecognitions);
+        String string = formulaToString(correctFormula(mappedRecognitions));
         StringBuilder formula = new StringBuilder();
         if(string.endsWith("=")){
             formula.append(string.substring(0,string.length() - 1));
@@ -18,6 +18,19 @@ public class Parser {
 
         Expression expression = new Expression(formula.toString());
         return expression.calculate();
+    }
+
+    public List<Classifier.Recognition> correctFormula(List<Classifier.Recognition> mappedRecognitions){
+        Classifier.Recognition tmp, last;
+
+        last = mappedRecognitions.get(mappedRecognitions.size() - 1);
+        if(last.getTitle() == "minus"){
+            mappedRecognitions.remove(last);
+            tmp = new Classifier.Recognition(last.getId(),"equals",last.getConfidence(), last.getLocation());
+            mappedRecognitions.add(tmp);
+        }
+
+        return mappedRecognitions;
     }
 
     public String formulaToString(List<Classifier.Recognition> mappedRecognitions){
