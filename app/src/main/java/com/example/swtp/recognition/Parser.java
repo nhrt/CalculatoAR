@@ -9,6 +9,13 @@ import java.util.ListIterator;
 
 public class Parser {
 
+    /*
+        method parse takes a ordered list of Recognitions.
+        1. correction of recoginitions with correctForumla
+        2. translation from corrected formula to a string
+        3. remove the tailing "equals" (necessary for mxparser
+        4. evaluate the formula as an expression and return the double value
+     */
     public double parse(List<Classifier.Recognition> mappedRecognitions){
         String string = formulaToString(correctFormula(mappedRecognitions));
         StringBuilder formula = new StringBuilder();
@@ -20,6 +27,10 @@ public class Parser {
         return expression.calculate();
     }
 
+
+    /*
+        Method correctFormula changes tailing "minus" to a tailing "equals"
+     */
     public List<Classifier.Recognition> correctFormula(List<Classifier.Recognition> mappedRecognitions){
         Classifier.Recognition tmp, last;
 
@@ -33,6 +44,9 @@ public class Parser {
         return mappedRecognitions;
     }
 
+    /*
+        method formulaToString takes a List of Recognitions and translates it into a String
+     */
     public String formulaToString(List<Classifier.Recognition> mappedRecognitions){
         ListIterator<Classifier.Recognition> iterator = mappedRecognitions.listIterator();
         char c;
@@ -47,7 +61,12 @@ public class Parser {
         return result.toString();
     }
 
+    /*
+        method recognitionToChar takes a recognition and finds a fitting character
+        "formula" gets translated to '~'
+        default return value is a '~'
 
+     */
     public char recognitionToChar(Classifier.Recognition recognition){
         switch (recognition.getTitle()){
             case "zero":
@@ -81,10 +100,9 @@ public class Parser {
             case "div":
                 return '/';
             case "formula":
-                break;
+                return '~';
             default:
-                break;
+                return '~';
         }
-        return '~';
     }
 }

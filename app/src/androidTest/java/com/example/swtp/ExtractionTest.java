@@ -28,12 +28,13 @@ public class ExtractionTest {
 
     @Test
     public void numberFormula_isCorrect(){
-        mappedRecognitions.add(new Classifier.Recognition("0","formula", 1f,new RectF(0f,0f,500f,500f)));
-        mappedRecognitions.add(new Classifier.Recognition("0","formula", 1f,new RectF(0f,0f,500f,500f)));
-        mappedRecognitions.add(new Classifier.Recognition("0","formula", 1f,new RectF(0f,0f,500f,500f)));
-        mappedRecognitions.add(new Classifier.Recognition("0","formula", 1f,new RectF(0f,0f,500f,500f)));
+        mappedRecognitions.add(new Classifier.Recognition("0","formula", 1f,new RectF(0f,0f,50f,50f)));
+        mappedRecognitions.add(new Classifier.Recognition("1","formula", 1f,new RectF(51f,51f,100f,100f)));
+        mappedRecognitions.add(new Classifier.Recognition("2","formula", 1f,new RectF(101f,101f,150f,150f)));
+        mappedRecognitions.add(new Classifier.Recognition("3","formula", 1f,new RectF(151f,151f,200f,200f)));
         assertEquals(4,formulaExtractor.extract(mappedRecognitions).size());
     }
+
     @Test
     public void categorisation_isCorrect(){
         mappedRecognitions.add(new Classifier.Recognition("1","formula", 1f,new RectF(0f,0f,500f,500f)));
@@ -59,6 +60,14 @@ public class ExtractionTest {
         assertEquals("2", formulas.get(0).get(1).getId());
         assertEquals("3", formulas.get(0).get(2).getId());
         assertEquals("4", formulas.get(0).get(3).getId());
+    }
+
+    @Test
+    public void formulaRemoving_isCorrect(){
+        mappedRecognitions.add(new Classifier.Recognition("0","formula", 1f,new RectF(0f,0f,150f,150f)));
+        mappedRecognitions.add(new Classifier.Recognition("1","formula", 1f,new RectF(51f,51f,100f,100f)));
+        mappedRecognitions.add(new Classifier.Recognition("2","formula", 1f,new RectF(151f,151f,200f,200f)));
+        assertEquals(2,formulaExtractor.extract(mappedRecognitions).size());
     }
 
 }
