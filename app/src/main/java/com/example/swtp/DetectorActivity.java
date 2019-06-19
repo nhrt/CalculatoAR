@@ -9,17 +9,19 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.util.Pair;
 import android.util.Size;
 import android.util.TypedValue;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.swtp.customview.ResultView;
 import com.example.swtp.env.BorderedText;
 import com.example.swtp.env.ImageUtils;
 import com.example.swtp.env.Logger;
 import com.example.swtp.recognition.FormulaExtractor;
 import com.example.swtp.recognition.Parser;
 import com.example.swtp.tracking.MultiBoxTracker;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -27,7 +29,7 @@ import java.util.List;
 
 import static java.lang.Double.NaN;
 
-public class DetectorActivity extends CameraActivity{
+public class DetectorActivity extends CameraActivity {
     private static final Logger LOGGER = new Logger();
     private static final boolean MAINTAIN_ASPECT = true;
     private static final float TEXT_SIZE_DIP = 10;
@@ -41,6 +43,7 @@ public class DetectorActivity extends CameraActivity{
     private Matrix frameToCropTransform;
     private Matrix cropToFrameTransform;
     OverlayView trackingOverlay;
+    ResultView resultView;
 
     Classifier detector;
     private static final boolean SAVE_PREVIEW_BITMAP = false;
@@ -53,8 +56,8 @@ public class DetectorActivity extends CameraActivity{
     List<Classifier.Recognition> recognitions;
 
     RectF location;
-    TextView view;
     double result;
+
     @Override
     protected Size getDesiredPreviewFrameSize() {
         return Settings.DESIRED_PREVIEW_SIZE;
@@ -79,7 +82,7 @@ public class DetectorActivity extends CameraActivity{
 
         int cropSize = Settings.TF_OD_API_INPUT_SIZE;
 
-        try{
+        try {
             detector = TFLiteObjectDetectionAPIModel.create(
                     getAssets(),
                     Settings.TF_OD_API_MODEL_FILE,
@@ -87,7 +90,7 @@ public class DetectorActivity extends CameraActivity{
                     Settings.TF_OD_API_INPUT_SIZE,
                     Settings.TF_OD_API_IS_QUANTIZED);
             cropSize = Settings.TF_OD_API_INPUT_SIZE;
-        }catch (IOException e){
+        } catch (IOException e) {
             LOGGER.e("Exception initializing classifier!", e);
             Toast toast =
                     Toast.makeText(
@@ -120,7 +123,6 @@ public class DetectorActivity extends CameraActivity{
                         0, MAINTAIN_ASPECT);
 
         trackingOverlay = findViewById(R.id.tracking_overlay);
-        view = findViewById(R.id.descTextView);
         trackingOverlay.addCallback(
                 new OverlayView.DrawCallback() {
                     @Override
@@ -128,18 +130,8 @@ public class DetectorActivity extends CameraActivity{
                         tracker.draw(canvas);
                     }
                 });
-        trackingOverlay.addCallback(
-                new OverlayView.DrawCallback() {
-                    @Override
-                    public void drawCallback(Canvas canvas) {
-                        if(location != null){
-                            Paint paint = new Paint();
-                            paint.setColor(Color.rgb(255,255,255));
-                            canvas.drawRect(0,0,10000,10000,paint);
-                        }
-                    }
-                }
-        );
+
+        resultView = findViewById(R.id.resultView);
 
     }
 
@@ -165,66 +157,52 @@ public class DetectorActivity extends CameraActivity{
         if (SAVE_PREVIEW_BITMAP) {
             ImageUtils.saveBitmap(croppedBitmap);
         }
-        /*
-            runInBackground(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                        */
-                            LOGGER.i("Running detection on image " + currTimestamp);
-                            final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
 
-                            cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
-                            /*
-                            final Canvas canvas = new Canvas(cropCopyBitmap);
-                            final Paint paint = new Paint();
-                            paint.setColor(Color.RED);
-                            paint.setStyle(Paint.Style.STROKE);
-                            paint.setStrokeWidth(2.0f);
-                            */
+        LOGGER.i("Running detection on image " + currTimestamp);
+        final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
 
-                            final List<Classifier.Recognition> mappedRecognitions = new LinkedList<>();
-
-                            for (final Classifier.Recognition result : results) {
-                                final RectF location = result.getLocation();
-                                if (location != null && result.getConfidence() >= Settings.MINIMUM_CONFIDENCE_TF_OD_API) {
-                                    //canvas.drawRect(location, paint);
-                                    cropToFrameTransform.mapRect(location);
-                                    location.offset(-75,300);
-                                    result.setLocation(location);
-                                    mappedRecognitions.add(result);
-                                }
-                            }
-                            if(Settings.SHOW_RECTS){
-                                tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
-                                trackingOverlay.postInvalidate();
-                                requestRender();
-                            }
-
-                            recognitions = mappedRecognitions;
+        cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
 
 
-                            computingDetection = false;
+        final List<Classifier.Recognition> mappedRecognitions = new LinkedList<>();
+
+        for (final Classifier.Recognition result : results) {
+            final RectF location = result.getLocation();
+            if (location != null && result.getConfidence() >= Settings.MINIMUM_CONFIDENCE_TF_OD_API) {
+                //canvas.drawRect(location, paint);
+                cropToFrameTransform.mapRect(location);
+                location.offset(-75, 300);
+                result.setLocation(location);
+                mappedRecognitions.add(result);
+            }
+        }
+        if (Settings.SHOW_RECTS) {
+            tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
+            trackingOverlay.postInvalidate();
+            requestRender();
+        }
+
+        recognitions = mappedRecognitions;
+
+
+        computingDetection = false;
     }
-                        /*
-                    });
-    }*/
 
-    protected void processLoop(){
+    protected void processLoop() {
         processImage();
         List<List<Classifier.Recognition>> formulas = formulaExtractor.extract(recognitions);
-
-        RectF location;
-
+        final List<Pair<String, RectF>> results = new ArrayList<>();
         boolean gotSolution = false;
-        for(List<Classifier.Recognition> formula : formulas){
+        for (List<Classifier.Recognition> formula : formulas) {
             result = parser.parse(formula);
-            if(result != NaN){
+            if (result != NaN) {
                 gotSolution = true;
-                location = formula.get(formula.size()-1).getLocation();
-                location.offset(location.width() + 5,0);
-
-                LOGGER.i("%s %f",parser.formulaToString(parser.correctFormula(formula)),result);
+                location = formula.get(formula.size() - 1).getLocation();
+                location.offset(location.width() + 5, 0);
+                if(location != null){
+                    results.add(new Pair(results + "", location));
+                }
+                LOGGER.i("%s %f", parser.formulaToString(parser.correctFormula(formula)), result);
                 trackingOverlay.postInvalidate();
             }
         }
@@ -238,7 +216,8 @@ public class DetectorActivity extends CameraActivity{
                                 new Runnable() {
                                     @Override
                                     public void run() {
-                                        view.setText(result + "");
+
+                                        resultView.setResult(results);
                                     }
                                 }
                         );
@@ -250,8 +229,9 @@ public class DetectorActivity extends CameraActivity{
             @Override
             public void run() {
                 readyForNextImage();
-            }}, gotSolution ? Settings.DETECTION_INTERVAL_SECONDS * 1000 : 0);
-        }
+            }
+        }, gotSolution ? Settings.DETECTION_INTERVAL_SECONDS * 1000 : 0);
+    }
 }
 
 
