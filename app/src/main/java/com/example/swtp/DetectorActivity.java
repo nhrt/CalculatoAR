@@ -45,6 +45,8 @@ public class DetectorActivity extends CameraActivity {
     OverlayView trackingOverlay;
     ResultView resultView;
 
+    List<Pair<String, RectF>> results;
+
     Classifier detector;
     private static final boolean SAVE_PREVIEW_BITMAP = false;
     private boolean computingDetection = false;
@@ -191,18 +193,17 @@ public class DetectorActivity extends CameraActivity {
     protected void processLoop() {
         processImage();
         List<List<Classifier.Recognition>> formulas = formulaExtractor.extract(recognitions);
-        final List<Pair<String, RectF>> results = new ArrayList<>();
+        results = new ArrayList<>();
         boolean gotSolution = false;
         for (List<Classifier.Recognition> formula : formulas) {
             result = parser.parse(formula);
             if (result != NaN) {
                 gotSolution = true;
                 location = formula.get(formula.size() - 1).getLocation();
-                location.offset(location.width() + 5, 0);
+                location.offset(location.width() * 2, 0);
                 if(location != null){
-                    results.add(new Pair(results + "", location));
+                    results.add(new Pair(result + "", location));
                 }
-                LOGGER.i("%s %f", parser.formulaToString(parser.correctFormula(formula)), result);
                 trackingOverlay.postInvalidate();
             }
         }
@@ -216,7 +217,6 @@ public class DetectorActivity extends CameraActivity {
                                 new Runnable() {
                                     @Override
                                     public void run() {
-
                                         resultView.setResult(results);
                                     }
                                 }

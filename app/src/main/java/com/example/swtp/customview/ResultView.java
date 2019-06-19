@@ -10,9 +10,12 @@ import android.util.AttributeSet;
 import android.util.Pair;
 import android.view.View;
 
+import com.example.swtp.env.Logger;
+
 import java.util.List;
 
 public class ResultView extends View {
+    private static final Logger LOGGER = new Logger();
     List<Pair<String, RectF>> results;
 
 
@@ -38,11 +41,10 @@ public class ResultView extends View {
         paint.setColor(Color.BLACK);
 
         if(results != null){
-            int i = 1;
             for(Pair<String, RectF> result : results){
-                if(result != null && result.first != null){
-                    canvas.drawText(result.first,100 * i,100 * i,paint);
-                    i++;
+                if(result != null && result.first != null && result.second != null){
+                    LOGGER.i("Result: %s Location: x %d y %d",result.first,(int)result.second.left,(int)result.second.top);
+                    canvas.drawText(result.first,result.second.top,result.second.bottom,paint);
                 }
 
             }
