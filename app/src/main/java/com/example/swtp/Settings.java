@@ -12,6 +12,6 @@ public final class Settings {
     static final float IMAGE_STD = 128.0f;
     static final boolean TF_OD_API_IS_QUANTIZED = false;
     static final int NUM_DETECTIONS = 50;
-    static boolean SHOW_RECTS = true;
-    static final int DETECTION_INTERVAL_SECONDS = 3;
+    static boolean SHOW_RECTS = false;
+    static final int DETECTION_INTERVAL_SECONDS = 1;
 }

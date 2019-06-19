@@ -200,14 +200,13 @@ public class DetectorActivity extends CameraActivity {
             if (result != NaN) {
                 gotSolution = true;
                 location = formula.get(formula.size() - 1).getLocation();
-                location.offset(location.width() * 2, 0);
+                location.offset(0, 0);
                 if(location != null){
                     results.add(new Pair(result + "", location));
                 }
                 trackingOverlay.postInvalidate();
             }
         }
-
 
         runInBackground(
                 new Runnable() {
