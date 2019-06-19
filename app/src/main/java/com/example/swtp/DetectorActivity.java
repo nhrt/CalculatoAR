@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Size;
 import android.util.TypedValue;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.swtp.env.BorderedText;
@@ -23,6 +24,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+
+import static java.lang.Double.NaN;
 
 public class DetectorActivity extends CameraActivity{
     private static final Logger LOGGER = new Logger();
@@ -47,8 +50,11 @@ public class DetectorActivity extends CameraActivity{
     private long lastTimestamp = 0;
     private FormulaExtractor formulaExtractor = new FormulaExtractor();
     private Parser parser = new Parser();
-    private int counter = 0;
+    List<Classifier.Recognition> recognitions;
 
+    RectF location;
+    TextView view;
+    double result;
     @Override
     protected Size getDesiredPreviewFrameSize() {
         return Settings.DESIRED_PREVIEW_SIZE;
@@ -114,18 +120,27 @@ public class DetectorActivity extends CameraActivity{
                         0, MAINTAIN_ASPECT);
 
         trackingOverlay = findViewById(R.id.tracking_overlay);
-
-        if(trackingOverlay != null){
-            trackingOverlay.addCallback(
-                    new OverlayView.DrawCallback() {
-                        @Override
-                        public void drawCallback(final Canvas canvas) {
-                            tracker.draw(canvas);
+        view = findViewById(R.id.descTextView);
+        trackingOverlay.addCallback(
+                new OverlayView.DrawCallback() {
+                    @Override
+                    public void drawCallback(final Canvas canvas) {
+                        tracker.draw(canvas);
+                    }
+                });
+        trackingOverlay.addCallback(
+                new OverlayView.DrawCallback() {
+                    @Override
+                    public void drawCallback(Canvas canvas) {
+                        if(location != null){
+                            Paint paint = new Paint();
+                            paint.setColor(Color.rgb(255,255,255));
+                            canvas.drawRect(0,0,10000,10000,paint);
                         }
-                    });
-        }else{
-            LOGGER.i("trackingOverlay is null");
-        }
+                    }
+                }
+        );
+
     }
 
     @Override
@@ -150,28 +165,30 @@ public class DetectorActivity extends CameraActivity{
         if (SAVE_PREVIEW_BITMAP) {
             ImageUtils.saveBitmap(croppedBitmap);
         }
-
+        /*
             runInBackground(
                     new Runnable() {
                         @Override
                         public void run() {
+                        */
                             LOGGER.i("Running detection on image " + currTimestamp);
                             final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
 
                             cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
+                            /*
                             final Canvas canvas = new Canvas(cropCopyBitmap);
                             final Paint paint = new Paint();
                             paint.setColor(Color.RED);
                             paint.setStyle(Paint.Style.STROKE);
                             paint.setStrokeWidth(2.0f);
-
+                            */
 
                             final List<Classifier.Recognition> mappedRecognitions = new LinkedList<>();
 
                             for (final Classifier.Recognition result : results) {
                                 final RectF location = result.getLocation();
                                 if (location != null && result.getConfidence() >= Settings.MINIMUM_CONFIDENCE_TF_OD_API) {
-                                    canvas.drawRect(location, paint);
+                                    //canvas.drawRect(location, paint);
                                     cropToFrameTransform.mapRect(location);
                                     location.offset(-75,300);
                                     result.setLocation(location);
@@ -181,32 +198,60 @@ public class DetectorActivity extends CameraActivity{
                             if(Settings.SHOW_RECTS){
                                 tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
                                 trackingOverlay.postInvalidate();
+                                requestRender();
                             }
-                            //Extract the formulas from the Recognitions.
-                            List<List<Classifier.Recognition>> formulas = formulaExtractor.extract(mappedRecognitions);
-                            //Show Results
-                            for(List<Classifier.Recognition> formula : formulas){
-                                LOGGER.i(parser.formulaToString(formula) + "=" + parser.parse(formula));
-                            }
-                            requestRender();
+
+                            recognitions = mappedRecognitions;
+
+
                             computingDetection = false;
-                        }
-                    });
     }
+                        /*
+                    });
+    }*/
 
     protected void processLoop(){
-        if(counter < 3){
-            processImage();
-            counter++;
-            readyForNextImage();
-        }else{
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    counter = 0;
-                    readyForNextImage();
-                }}, Settings.DETECTION_INTERVAL_SECONDS * 1000);
-        }
-    }
+        processImage();
+        List<List<Classifier.Recognition>> formulas = formulaExtractor.extract(recognitions);
 
+        RectF location;
+
+        boolean gotSolution = false;
+        for(List<Classifier.Recognition> formula : formulas){
+            result = parser.parse(formula);
+            if(result != NaN){
+                gotSolution = true;
+                location = formula.get(formula.size()-1).getLocation();
+                location.offset(location.width() + 5,0);
+
+                LOGGER.i("%s %f",parser.formulaToString(parser.correctFormula(formula)),result);
+                trackingOverlay.postInvalidate();
+            }
+        }
+
+
+        runInBackground(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        view.setText(result + "");
+                                    }
+                                }
+                        );
+                    }
+                }
+        );
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                readyForNextImage();
+            }}, gotSolution ? Settings.DETECTION_INTERVAL_SECONDS * 1000 : 0);
+        }
 }
+
+

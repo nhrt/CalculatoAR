@@ -20,6 +20,8 @@ public class ExtractionTest {
     List<Classifier.Recognition> mappedRecognitions;
 
 
+
+
     @Before
     public void initialize(){
         formulaExtractor = new FormulaExtractor();
@@ -54,6 +56,7 @@ public class ExtractionTest {
         mappedRecognitions.add(new Classifier.Recognition("2","zero", 1f,new RectF(50f,50f,100f,100f)));
         mappedRecognitions.add(new Classifier.Recognition("3","one", 1f,new RectF(101,101,150,150)));
         mappedRecognitions.add(new Classifier.Recognition("1","formula", 1f,new RectF(0f,0f,500f,500f)));
+
         List<List<Classifier.Recognition>> formulas = formulaExtractor.extract(mappedRecognitions);
         assertEquals(4,formulas.get(0).size());
         assertEquals("1", formulas.get(0).get(0).getId());
@@ -69,5 +72,4 @@ public class ExtractionTest {
         mappedRecognitions.add(new Classifier.Recognition("2","formula", 1f,new RectF(151f,151f,200f,200f)));
         assertEquals(2,formulaExtractor.extract(mappedRecognitions).size());
     }
-
 }

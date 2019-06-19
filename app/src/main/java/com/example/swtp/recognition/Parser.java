@@ -19,8 +19,10 @@ public class Parser {
     public double parse(List<Classifier.Recognition> mappedRecognitions){
         String string = formulaToString(correctFormula(mappedRecognitions));
         StringBuilder formula = new StringBuilder();
-        if(string.endsWith("=")){
+        if(string.endsWith("=") || string.endsWith("-")){
             formula.append(string.substring(0,string.length() - 1));
+        }else{
+            formula.append(string);
         }
 
         Expression expression = new Expression(formula.toString());

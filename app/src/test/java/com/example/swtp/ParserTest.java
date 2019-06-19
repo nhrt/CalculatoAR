@@ -97,4 +97,17 @@ public class ParserTest {
         assertEquals("1-2=",parser.formulaToString(smallFormula));
         assertEquals(-1.0,parser.parse(smallFormula),0.99);
     }
+
+
+    @Test
+    public void correction_isCorrect(){
+        List<Classifier.Recognition> smallFormula = new ArrayList<>();
+        smallFormula.add(formula.get(0));
+        smallFormula.add(formula.get(2));
+        smallFormula.add(formula.get(11));
+        smallFormula.add(formula.get(3));
+        smallFormula.add(formula.get(12));
+        assertEquals("1+2-",parser.formulaToString(smallFormula));
+        assertEquals(3.0,parser.parse(smallFormula),0.99);
+    }
 }

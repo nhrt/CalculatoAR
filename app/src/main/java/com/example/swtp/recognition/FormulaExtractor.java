@@ -112,7 +112,12 @@ public class FormulaExtractor {
                 }
             });
         }
+
+
         // LOGGER.i("Return Extracted Recognitions");
         return formulas;
     }
+
+
+
 }

@@ -14,6 +14,8 @@ import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.widget.Toast;
+
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -60,7 +62,7 @@ public class MultiBoxTracker {
 
     final List<Pair<Float, RectF>> screenRects = new LinkedList<Pair<Float, RectF>>();
 
-    private static class TrackedRecognition {
+    static class TrackedRecognition {
         ObjectTracker.TrackedObject trackedObject;
         RectF location;
         float detectionConfidence;
@@ -148,6 +150,7 @@ public class MultiBoxTracker {
         logger.i("Processing %d results from %d", results.size(), timestamp);
         processResults(timestamp, results, frame);
     }
+
 
     public synchronized void draw(final Canvas canvas) {
         final boolean rotated = sensorOrientation % 180 == 90;
