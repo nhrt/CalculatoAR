@@ -2,13 +2,10 @@ package com.example.swtp;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
-import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.os.Handler;
-import android.os.SystemClock;
 import android.util.Pair;
 import android.util.Size;
 import android.util.TypedValue;
@@ -135,6 +132,29 @@ public class DetectorActivity extends CameraActivity {
 
         resultView = findViewById(R.id.resultView);
 
+
+        Thread th = new Thread(new Runnable() {
+            private long startTime = System.currentTimeMillis();
+            public void run() {
+                while (true) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            resultView.setResult(results);
+                        }
+                    });
+                    try {
+                        Thread.sleep(100);
+                    }
+                    catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        th.start();
+
+
     }
 
     @Override
@@ -201,28 +221,12 @@ public class DetectorActivity extends CameraActivity {
                 gotSolution = true;
                 location = formula.get(formula.size() - 1).getLocation();
                 location.offset(0, 0);
-                if(location != null){
+                if (location != null) {
                     results.add(new Pair(result + "", location));
                 }
                 trackingOverlay.postInvalidate();
             }
         }
-
-        runInBackground(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        runOnUiThread(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        resultView.setResult(results);
-                                    }
-                                }
-                        );
-                    }
-                }
-        );
 
         new Handler().postDelayed(new Runnable() {
             @Override
