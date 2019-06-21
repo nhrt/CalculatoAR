@@ -39,23 +39,25 @@ public class DetectorActivity extends CameraActivity {
     private Bitmap cropCopyBitmap = null;
     private Matrix frameToCropTransform;
     private Matrix cropToFrameTransform;
-    OverlayView trackingOverlay;
-    ResultView resultView;
+    private OverlayView trackingOverlay;
+    private ResultView resultView;
 
-    List<Pair<String, RectF>> results;
+    private List<Pair<String, RectF>> results = new ArrayList<>();
 
-    Classifier detector;
+    private Classifier detector;
     private static final boolean SAVE_PREVIEW_BITMAP = false;
     private boolean computingDetection = false;
     private byte[] luminanceCopy;
     private long timestamp = 0;
-    private long lastTimestamp = 0;
+
+
     private FormulaExtractor formulaExtractor = new FormulaExtractor();
     private Parser parser = new Parser();
-    List<Classifier.Recognition> recognitions;
 
-    RectF location;
-    double result;
+
+    private int counter;
+    private List<Classifier.Recognition> recognition_buffer = new ArrayList<>();
+    private List<Classifier.Recognition> recognitions;
 
     @Override
     protected Size getDesiredPreviewFrameSize() {
@@ -134,7 +136,6 @@ public class DetectorActivity extends CameraActivity {
 
 
         Thread th = new Thread(new Runnable() {
-            private long startTime = System.currentTimeMillis();
             public void run() {
                 while (true) {
                     runOnUiThread(new Runnable() {
@@ -144,7 +145,7 @@ public class DetectorActivity extends CameraActivity {
                         }
                     });
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(7);
                     }
                     catch (InterruptedException e) {
                         e.printStackTrace();
@@ -164,7 +165,6 @@ public class DetectorActivity extends CameraActivity {
         byte[] originalLuminance = getLuminance();
         final long currTimestamp = timestamp;
 
-        lastTimestamp = currTimestamp;
 
         computingDetection = true;
         rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
@@ -211,29 +211,44 @@ public class DetectorActivity extends CameraActivity {
     }
 
     protected void processLoop() {
-        processImage();
-        List<List<Classifier.Recognition>> formulas = formulaExtractor.extract(recognitions);
-        results = new ArrayList<>();
-        boolean gotSolution = false;
-        for (List<Classifier.Recognition> formula : formulas) {
-            result = parser.parse(formula);
-            if (result != NaN) {
-                gotSolution = true;
-                location = formula.get(formula.size() - 1).getLocation();
-                location.offset(0, 0);
-                if (location != null) {
-                    results.add(new Pair(result + "", location));
+        if(counter < Settings.AMOUNT_SSD){
+            counter++;
+            processImage();
+            recognition_buffer.addAll(recognitions);
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    readyForNextImage();
                 }
-                trackingOverlay.postInvalidate();
-            }
-        }
+            },50);
+        }else {
+            counter = 0;
+            boolean gotSolution = false;
 
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                readyForNextImage();
+            //extract and combine all recognitions
+            List<List<Classifier.Recognition>> formulas = formulaExtractor.extract(recognition_buffer);
+            recognition_buffer.clear();
+
+            //evaluate formulas
+            results.clear();
+            for (List<Classifier.Recognition> formula : formulas) {
+                double result = parser.parse(formula);
+                RectF location = formula.get(formula.size() - 1).getLocation();
+
+                if (result != NaN && location != null) {
+                    gotSolution = true;
+                    results.add(new Pair(String.valueOf(result), location));
+                }
             }
-        }, gotSolution ? Settings.DETECTION_INTERVAL_SECONDS * 1000 : 0);
+
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    readyForNextImage();
+                }
+            }, gotSolution ? Settings.DETECTION_INTERVAL_SECONDS * 1000 : 0);
+
+        }
     }
 }
 

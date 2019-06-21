@@ -42,7 +42,7 @@ public class ResultView extends View {
         if(results != null){
             for(Pair<String, RectF> result : results){
                 if(result != null && result.first != null && result.second != null && !result.first.equals("NaN")){
-                    LOGGER.i("Result: %s Location: x %d y %d",result.first,(int)result.second.left,(int)result.second.top);
+                    //LOGGER.i("Result: %s Location: x %d y %d",result.first,(int)result.second.left,(int)result.second.top);
                     canvas.drawText(result.first,result.second.right,result.second.bottom,paint);
                 }
             }
