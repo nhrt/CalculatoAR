@@ -134,28 +134,7 @@ public class DetectorActivity extends CameraActivity {
 
         resultView = findViewById(R.id.resultView);
 
-
-        Thread th = new Thread(new Runnable() {
-            public void run() {
-                while (true) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            resultView.setResult(results);
-                        }
-                    });
-                    try {
-                        Thread.sleep(7);
-                    }
-                    catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
-        th.start();
-
-
+        startUpdateThread();
     }
 
     @Override
@@ -249,6 +228,28 @@ public class DetectorActivity extends CameraActivity {
             }, gotSolution ? Settings.DETECTION_INTERVAL_SECONDS * 1000 : 0);
 
         }
+    }
+
+    private void startUpdateThread(){
+        Thread th = new Thread(new Runnable() {
+            public void run() {
+                while (true) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            resultView.setResult(results);
+                        }
+                    });
+                    try {
+                        Thread.sleep(7);
+                    }
+                    catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        th.start();
     }
 }
 

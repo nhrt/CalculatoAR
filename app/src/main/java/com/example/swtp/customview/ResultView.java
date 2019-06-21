@@ -22,8 +22,8 @@ public class ResultView extends View {
         super(context, attrs);
     }
 
-    public void setResult(List<Pair<String, RectF>>  results){
-        this.results  = results;
+    public void setResult(List<Pair<String, RectF>> results) {
+        this.results = results;
         invalidate();
     }
 
@@ -39,14 +39,18 @@ public class ResultView extends View {
         paint.setTextSize(60f);
         paint.setColor(Color.BLACK);
 
-        if(results != null){
-            for(Pair<String, RectF> result : results){
-                if(result != null && result.first != null && result.second != null && !result.first.equals("NaN")){
-                    //LOGGER.i("Result: %s Location: x %d y %d",result.first,(int)result.second.left,(int)result.second.top);
-                    canvas.drawText(result.first,result.second.right,result.second.bottom,paint);
+        if (results != null) {
+            synchronized (results){
+                for (Pair<String, RectF> result : results) {
+                    if (result != null && result.first != null && result.second != null && !result.first.equals("NaN")) {
+                        //LOGGER.i("Result: %s Location: x %d y %d",result.first,(int)result.second.left,(int)result.second.top);
+                        canvas.drawText(result.first, result.second.right, result.second.bottom, paint);
+                    }
                 }
             }
+
         }
+
 
     }
 }

@@ -211,7 +211,14 @@ public abstract class CameraActivity extends AppCompatActivity
                                 }
                         };
                 //processImage();
-                processLoop();
+                runInBackground(
+                        new Runnable() {
+                                @Override
+                                public void run() {
+                                        processLoop();
+                                }
+                        }
+                );
         }
 
         /** Callback for Camera2 API */
@@ -268,8 +275,15 @@ public abstract class CameraActivity extends AppCompatActivity
                                                 isProcessingFrame = false;
                                         }
                                 };
+                        runInBackground(
+                                new Runnable() {
+                                        @Override
+                                        public void run() {
+                                                processLoop();
+                                        }
+                                }
+                        );
 
-                        processLoop();
                         //processImage();
                 } catch (final Exception e) {
                         LOGGER.e(e, "Exception!");
