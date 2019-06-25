@@ -1,14 +1,19 @@
 package com.example.swtp.openCV;
 
-import org.opencv.core.Rect;
-import org.opencv.core.Rect2d;
+import android.graphics.Bitmap;
+
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfKeyPoint;
+import org.opencv.features2d.FastFeatureDetector;
 
 public class TestCV {
-    Rect rect = new Rect();
-    Rect2d rect2d = new Rect2d();
 
-    public void main(){
-        rect2d.clone();
-        rect.x = 5;
+    public void test(Bitmap img1, Bitmap img2){
+
+        Mat imgMat1 = new Mat(), imgMat2 = new Mat();
+        MatOfKeyPoint point = new MatOfKeyPoint();
+
+        FastFeatureDetector featureDetector = FastFeatureDetector.create(4);
+        featureDetector.detect(imgMat1, point);
     }
 }
