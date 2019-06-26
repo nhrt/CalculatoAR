@@ -246,7 +246,6 @@ public class DetectorActivity extends CameraActivity {
                             new Runnable() {
                                 @Override
                                 public void run() {
-
                                     resultView.setResult(results);
                                 }
                             }
