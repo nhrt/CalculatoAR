@@ -242,8 +242,15 @@ public class DetectorActivity extends CameraActivity {
             @Override
             protected Object doInBackground(Object[] objects) {
                 while (true){
+                    runOnUiThread(
+                            new Runnable() {
+                                @Override
+                                public void run() {
 
-                    resultView.setResult(results);
+                                    resultView.setResult(results);
+                                }
+                            }
+                    );
 
                     try {
                         Thread.sleep(7);
