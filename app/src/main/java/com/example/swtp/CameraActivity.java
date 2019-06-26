@@ -1,6 +1,7 @@
 package com.example.swtp;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -31,7 +32,7 @@ import com.example.swtp.env.Logger;
 
 import java.nio.ByteBuffer;
 
-public abstract class CameraActivity extends AppCompatActivity
+public abstract class CameraActivity extends Activity
         implements OnImageAvailableListener,
         Camera.PreviewCallback{
 
@@ -224,6 +225,7 @@ public abstract class CameraActivity extends AppCompatActivity
         /** Callback for Camera2 API */
         @Override
         public void onImageAvailable(final ImageReader reader) {
+                LOGGER.i("IMAGE AVAILABLE");
                 // We need wait until we have some size from onPreviewSizeChosen
                 if (previewWidth == 0 || previewHeight == 0) {
                         return;
@@ -404,11 +406,13 @@ public abstract class CameraActivity extends AppCompatActivity
     protected byte[] getLuminance() {
         return yuvBytes[0];
     }
+    /*
     public void requestRender() {
         final OverlayView overlay = (OverlayView) findViewById(R.id.debug_overlay);
         if (overlay != null) {
             overlay.postInvalidate();
         }
     }
+    */
 
 }

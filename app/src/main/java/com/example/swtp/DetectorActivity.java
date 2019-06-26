@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Pair;
 import android.util.Size;
@@ -31,9 +32,7 @@ public class DetectorActivity extends CameraActivity {
     private static final boolean MAINTAIN_ASPECT = true;
     private static final float TEXT_SIZE_DIP = 10;
 
-    private BorderedText borderedText;
     private MultiBoxTracker tracker;
-    private Integer sensorOrientation;
     private Bitmap rgbFrameBitmap = null;
     private Bitmap croppedBitmap = null;
     private Bitmap cropCopyBitmap = null;
@@ -58,6 +57,7 @@ public class DetectorActivity extends CameraActivity {
     private int counter;
     private List<Classifier.Recognition> recognition_buffer = new ArrayList<>();
     private List<Classifier.Recognition> recognitions;
+    private AsyncTask resultThread;
 
     @Override
     protected Size getDesiredPreviewFrameSize() {
@@ -76,7 +76,7 @@ public class DetectorActivity extends CameraActivity {
         final float textSizePx =
                 TypedValue.applyDimension(
                         TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
-        borderedText = new BorderedText(textSizePx);
+        BorderedText borderedText = new BorderedText(textSizePx);
         borderedText.setTypeface(Typeface.MONOSPACE);
 
         tracker = new MultiBoxTracker(this);
@@ -103,7 +103,7 @@ public class DetectorActivity extends CameraActivity {
         previewWidth = size.getWidth();
         previewHeight = size.getHeight();
 
-        sensorOrientation = rotation - getScreenOrientation();
+        int sensorOrientation = rotation - getScreenOrientation();
         LOGGER.i("orientation: " + sensorOrientation);
         LOGGER.i("Camera orientation relative to screen canvas: %d", sensorOrientation);
 
@@ -180,7 +180,7 @@ public class DetectorActivity extends CameraActivity {
         if (Settings.SHOW_RECTS) {
             tracker.trackResults(mappedRecognitions, luminanceCopy, currTimestamp);
             trackingOverlay.postInvalidate();
-            requestRender();
+            //requestRender();
         }
 
         recognitions = mappedRecognitions;
@@ -230,16 +230,21 @@ public class DetectorActivity extends CameraActivity {
         }
     }
 
+    @Override
+    public synchronized void onStop() {
+        super.onStop();
+        resultThread.cancel(true);
+    }
+
+
     private void startUpdateThread(){
-        Thread th = new Thread(new Runnable() {
-            public void run() {
-                while (true) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            resultView.setResult(results);
-                        }
-                    });
+        resultThread = new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                while (true){
+
+                    resultView.setResult(results);
+
                     try {
                         Thread.sleep(7);
                     }
@@ -248,9 +253,11 @@ public class DetectorActivity extends CameraActivity {
                     }
                 }
             }
-        });
-        th.start();
+        };
+        resultThread.execute();
     }
+
+
 }
 
 
