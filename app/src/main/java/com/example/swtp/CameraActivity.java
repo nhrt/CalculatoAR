@@ -20,7 +20,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Trace;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Size;
 import android.view.Surface;
 import android.view.WindowManager;
@@ -225,7 +224,6 @@ public abstract class CameraActivity extends Activity
         /** Callback for Camera2 API */
         @Override
         public void onImageAvailable(final ImageReader reader) {
-                LOGGER.i("IMAGE AVAILABLE");
                 // We need wait until we have some size from onPreviewSizeChosen
                 if (previewWidth == 0 || previewHeight == 0) {
                         return;

@@ -21,6 +21,7 @@ import com.example.swtp.recognition.Parser;
 import com.example.swtp.tracking.MultiBoxTracker;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -57,7 +58,7 @@ public class DetectorActivity extends CameraActivity {
     private int counter;
     private List<Classifier.Recognition> recognition_buffer = new ArrayList<>();
     private List<Classifier.Recognition> recognitions;
-    private AsyncTask resultThread;
+    private static  AsyncTask resultThread;
 
     @Override
     protected Size getDesiredPreviewFrameSize() {
@@ -238,32 +239,44 @@ public class DetectorActivity extends CameraActivity {
 
 
     private void startUpdateThread(){
-        resultThread = new AsyncTask() {
-            @Override
-            protected Object doInBackground(Object[] objects) {
-                while (true){
-                    runOnUiThread(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    resultView.setResult(results);
-                                }
-                            }
-                    );
-
-                    try {
-                        Thread.sleep(7);
-                    }
-                    catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        };
+        resultThread = new UITask(this);
         resultThread.execute();
     }
 
 
+    private static class UITask extends AsyncTask{
+        private WeakReference<DetectorActivity> activityReference;
+
+        // only retain a weak reference to the activity
+        UITask(DetectorActivity context) {
+            activityReference = new WeakReference<>(context);
+        }
+
+        @Override
+        protected Object doInBackground(Object[] objects) {
+            final DetectorActivity activity = activityReference.get();
+
+            while(activity != null && !activity.isFinishing()) {
+                activity.runOnUiThread(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                activity.resultView.setResult(activity.results);
+                            }
+                        }
+                );
+
+                try {
+                    Thread.sleep(7);
+                }
+                catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            return null;
+        }
+
+    }
 }
 
 
