@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -41,6 +42,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 import static java.lang.Double.NaN;
 
@@ -114,6 +116,7 @@ public class DetectorActivity extends CameraActivity {
     private List<Classifier.Recognition> recognitions;
     private static  AsyncTask resultThread;
     private FloatingActionButton btn_screenshot;
+    private FloatingActionButton btn_save;
 
     @Override
     protected Size getDesiredPreviewFrameSize() {
@@ -328,6 +331,46 @@ public class DetectorActivity extends CameraActivity {
                 shareScreenShot(imageUri);
             }
         });
+
+        btn_save = findViewById(R.id.btn_save);
+        btn_save.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                resultThread.cancel(true);
+                Bitmap screenshot = takeScreenShot();
+                storeScreenShot(screenshot);
+            }
+        });
+
+    }
+
+    private void storeScreenShot(Bitmap screenshot) {
+        String root = Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES).toString();
+        File myDir = new File(root + "/CalculatoAR");
+        myDir.mkdirs();
+        int n = 10000;
+        Random generator = new Random();
+        n = generator.nextInt(n);
+        String fname = "Image-" + n + ".jpg";
+        File file = new File(myDir, fname);
+        if (file.exists()) file.delete();
+        try {
+            FileOutputStream out = new FileOutputStream(file);
+            screenshot.compress(Bitmap.CompressFormat.JPEG, 90, out);
+            out.flush();
+            out.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        MediaScannerConnection.scanFile(this, new String[]{file.toString()}, null,
+                new MediaScannerConnection.OnScanCompletedListener() {
+                    public void onScanCompleted(String path, Uri uri) {
+                        Log.i("ExternalStorage", "Scanned " + path + ":");
+                        Log.i("ExternalStorage", "-> uri=" + uri);
+                    }
+                });
     }
 
     private void shareScreenShot(Uri uri){
@@ -363,7 +406,6 @@ public class DetectorActivity extends CameraActivity {
         } catch (IOException e) {
             Log.e("GREC", e.getMessage(), e);
         }
-
         LOGGER.i("Image saved at %s",imagePath.getPath());
         return imagePath.getPath();
     }

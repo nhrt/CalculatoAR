@@ -20,8 +20,7 @@
     android:layout_height="match_parent"
     tools:context="com.example.swtp.CameraActivity" >
 
-    <FrameLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
+    <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:id="@+id/container"
         android:layout_width="match_parent"
@@ -29,14 +28,28 @@
         android:background="#000"
         tools:context="com.example.swtp.CameraActivity" />
 
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/btn_save"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        app:fabSize="auto"
+        android:background="@color/colorPrimary"
+        app:useCompatPadding="true"
+        android:layout_marginRight="5dp"
+        android:layout_marginBottom="5dp"
+        app:srcCompat="@android:drawable/ic_menu_gallery" />
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/btn_screenshot"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
+        android:layout_marginRight="65dp"
+        android:layout_marginBottom="5dp"
         android:background="@color/colorPrimary"
+        app:fabSize="auto"
+        android:scaleType="center"
         app:srcCompat="@android:drawable/ic_dialog_email" />
 
 </android.support.design.widget.CoordinatorLayout>
