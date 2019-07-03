@@ -6,6 +6,9 @@
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_ST" />
+    <uses-permission android:name="Intent.FLAG_GRANT_READ_URI_PERMISSION"/>
+    <uses-permission android:name="Intent.FLAG_GRANT_WRITE_URI_PERMISSION"/>
 
     <application
         android:allowBackup="true"
@@ -24,5 +27,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.example.swtp.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <!-- ressource file to create -->
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider">
+            </meta-data>
+        </provider>
     </application>
 </manifest>

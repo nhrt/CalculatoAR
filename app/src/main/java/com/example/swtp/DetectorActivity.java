@@ -1,15 +1,28 @@
 package com.example.swtp;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
+import android.os.StrictMode;
+import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.FileProvider;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.Pair;
 import android.util.Size;
 import android.util.TypedValue;
+import android.view.View;
 import android.widget.Toast;
 
 import com.example.swtp.customview.ResultView;
@@ -20,6 +33,9 @@ import com.example.swtp.recognition.FormulaExtractor;
 import com.example.swtp.recognition.Parser;
 import com.example.swtp.tracking.MultiBoxTracker;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -29,6 +45,44 @@ import java.util.List;
 import static java.lang.Double.NaN;
 
 public class DetectorActivity extends CameraActivity {
+
+
+    private static class UITask extends AsyncTask{
+        private WeakReference<DetectorActivity> activityReference;
+
+        // only retain a weak reference to the activity
+        UITask(DetectorActivity context) {
+            activityReference = new WeakReference<>(context);
+        }
+
+        @Override
+        protected Object doInBackground(Object[] objects) {
+            final DetectorActivity activity = activityReference.get();
+
+            while(activity != null && !activity.isFinishing()) {
+                activity.runOnUiThread(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                if(activity.resultView != null){
+                                    activity.resultView.setResult(activity.results);
+                                }
+                            }
+                        }
+                );
+
+                try {
+                    Thread.sleep(7);
+                }
+                catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            return null;
+        }
+
+    }
+
     private static final Logger LOGGER = new Logger();
     private static final boolean MAINTAIN_ASPECT = true;
     private static final float TEXT_SIZE_DIP = 10;
@@ -59,6 +113,7 @@ public class DetectorActivity extends CameraActivity {
     private List<Classifier.Recognition> recognition_buffer = new ArrayList<>();
     private List<Classifier.Recognition> recognitions;
     private static  AsyncTask resultThread;
+    private FloatingActionButton btn_screenshot;
 
     @Override
     protected Size getDesiredPreviewFrameSize() {
@@ -135,7 +190,7 @@ public class DetectorActivity extends CameraActivity {
 
         resultView = findViewById(R.id.resultView);
 
-        startUpdateThread();
+        //startUpdateThread();
     }
 
     @Override
@@ -217,6 +272,7 @@ public class DetectorActivity extends CameraActivity {
 
                 if (result != NaN && location != null) {
                     gotSolution = true;
+                    LOGGER.i("Result: %s Location: x %f  y %f", String.valueOf(result), location.right, location.bottom);
                     results.add(new Pair(String.valueOf(result), location));
                 }
             }
@@ -237,45 +293,119 @@ public class DetectorActivity extends CameraActivity {
         resultThread.cancel(true);
     }
 
+    @Override
+    public synchronized void onResume() {
+        super.onResume();
+        startUpdateThread();
+        readyForNextImage();
+    }
+
 
     private void startUpdateThread(){
         resultThread = new UITask(this);
         resultThread.execute();
     }
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-    private static class UITask extends AsyncTask{
-        private WeakReference<DetectorActivity> activityReference;
 
-        // only retain a weak reference to the activity
-        UITask(DetectorActivity context) {
-            activityReference = new WeakReference<>(context);
-        }
+        btn_screenshot = findViewById(R.id.btn_screenshot);
+        btn_screenshot.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                resultThread.cancel(true);
+                Bitmap screenshot = takeScreenShot();
+                String path = saveScreenShot(screenshot);
+                File file = new File(path);
 
-        @Override
-        protected Object doInBackground(Object[] objects) {
-            final DetectorActivity activity = activityReference.get();
+                Uri imageUri = FileProvider.getUriForFile(
+                        getApplicationContext(),
+                        "com.example.swtp.provider",
+                        file);
 
-            while(activity != null && !activity.isFinishing()) {
-                activity.runOnUiThread(
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                activity.resultView.setResult(activity.results);
-                            }
-                        }
-                );
+                shareScreenShot(imageUri);
+            }
+        });
+    }
 
+    private void shareScreenShot(Uri uri){
+        final Uri finalUri = uri;
+
+        runInBackground(new Runnable() {
+            @Override
+            public void run() {
+                Intent intent = new Intent(android.content.Intent.ACTION_SEND);
+                intent.putExtra(Intent.EXTRA_STREAM, finalUri);
+                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.setType("image/png");
                 try {
-                    Thread.sleep(7);
-                }
-                catch (InterruptedException e) {
-                    e.printStackTrace();
+                    startActivity(intent);
+                }catch (android.content.ActivityNotFoundException ex){
+                    ex.printStackTrace();
                 }
             }
-            return null;
+        });
+    }
+
+    private String saveScreenShot(Bitmap screenshot){
+        File imagePath = new File(Environment.getExternalStorageDirectory() + "/screenshot" + timestamp + ".png");
+        FileOutputStream fos;
+
+        try {
+            fos = new FileOutputStream(imagePath);
+            screenshot.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            fos.flush();
+            fos.close();
+        } catch (FileNotFoundException e) {
+            Log.e("GREC", e.getMessage(), e);
+        } catch (IOException e) {
+            Log.e("GREC", e.getMessage(), e);
         }
 
+        LOGGER.i("Image saved at %s",imagePath.getPath());
+        return imagePath.getPath();
+    }
+
+    private Bitmap takeScreenShot(){
+        Bitmap bitmap = Bitmap.createBitmap(getRgbBytes(), previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
+
+        Matrix matrix = new Matrix();
+        matrix.postRotate(90);
+        Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap,0,0,bitmap.getWidth(),bitmap.getHeight(),matrix,true);
+
+        Canvas canvas = new Canvas(rotatedBitmap);
+        Paint paint = new Paint();
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.TRANSPARENT);
+        canvas.drawPaint(paint);
+
+        paint.setTextSize(60f);
+        paint.setColor(Color.BLACK);
+
+        int width = canvas.getWidth();
+        int height = canvas.getHeight();
+
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+
+
+        int displayWidth = dm.widthPixels;
+        int displayHeight = dm.heightPixels;
+
+        synchronized (results){
+            RectF pos;
+            for (Pair<String, RectF> result : results){
+                pos = result.second;
+                pos.right = pos.right / displayWidth * width;
+                pos.bottom = pos.bottom / displayHeight * height;
+                canvas.drawText(result.first,result.second.right, result.second.bottom, paint);
+            }
+        }
+
+        canvas.setBitmap(rotatedBitmap);
+        LOGGER.i("took Screenshot");
+        return rotatedBitmap;
     }
 }
 
