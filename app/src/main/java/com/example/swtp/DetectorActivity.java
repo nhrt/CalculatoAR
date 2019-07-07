@@ -15,7 +15,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.os.StrictMode;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.FileProvider;
 import android.util.DisplayMetrics;
@@ -38,8 +37,9 @@ import com.example.swtp.tracking.MultiBoxTracker;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.CvException;
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -51,7 +51,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
-import static java.lang.Double.NaN;
 
 public class DetectorActivity extends CameraActivity {
 
@@ -81,40 +80,30 @@ public class DetectorActivity extends CameraActivity {
                 if (dstImg != null){
                     srcImg = dstImg;
                 }else{
-                    srcImg = activity.rgbFrameBitmap.copy(Bitmap.Config.ARGB_8888, true);
+                    srcImg =  Bitmap.createBitmap(activity.getRgbBytes(), 0, activity.previewWidth, activity.previewWidth, activity.previewHeight, Bitmap.Config.ARGB_8888);
+                    srcImg = activity.rotateBitmap(srcImg,90);
                 }
 
                 imgArray = activity.getRgbBytes();
                 if (imgArray != null) {
                     dstImg = Bitmap.createBitmap(activity.getRgbBytes(), 0, activity.previewWidth, activity.previewWidth, activity.previewHeight, Bitmap.Config.ARGB_8888);
+                    dstImg = activity.rotateBitmap(dstImg,90);
                     try {
-                        homography = openCV.findHomography(dstImg,srcImg);
+                        homography = openCV.findHomography(srcImg,dstImg);
                     } catch (CvException cv) {
                         LOGGER.i("CV EXCEPTION while searching homography");
                     }
-
                 }
 
                 if (homography != null && !homography.empty()) {
                     for (Pair<String, RectF> result : activity.results) {
-                        Mat obj_corners = new Mat(4, 1, CvType.CV_32FC2);
-                        Mat scene_corners = new Mat(4, 1, CvType.CV_32FC2);
-
-                        obj_corners.put(0, 0, new float[]{result.second.left, result.second.top});
-                        obj_corners.put(1, 0, new float[]{result.second.right, result.second.top});
-                        obj_corners.put(2, 0, new float[]{result.second.left, result.second.bottom});
-                        obj_corners.put(3, 0, new float[]{result.second.right, result.second.bottom});
-
-                        Core.perspectiveTransform(obj_corners, scene_corners, homography);
-
-                        result.second.top = (float) scene_corners.get(0, 0)[1];
-                        result.second.bottom = (float) scene_corners.get(2, 0)[1];
-                        result.second.left = (float) scene_corners.get(0, 0)[0];
-                        result.second.right = (float) scene_corners.get(1, 0)[0];
-
-                        // Core.line(img, new Point(scene_corners.get(0,0)), new Point(scene_corners.get(1,0)), new Scalar(0, 255, 0),4);
+                        Mat point = new Mat();
+                        point.push_back(new MatOfPoint2f(new Point(result.second.right,result.second.bottom)));
+                        Core.perspectiveTransform(point,point,homography);
+                        LOGGER.i("%f %f",(float)point.get(0,0)[0],(float)point.get(0,0)[1]);
+                        result.second.right = (float)point.get(0,0)[0];
+                        result.second.bottom = (float)point.get(0,0)[1];
                     }
-
                 }
 
                 activity.runOnUiThread(
@@ -332,7 +321,7 @@ public class DetectorActivity extends CameraActivity {
                 double result = parser.parse(formula);
                 RectF location = formula.get(formula.size() - 1).getLocation();
 
-                if (result != NaN && location != null) {
+                if (!Double.isNaN(result) && location != null) {
                     gotSolution = true;
                     LOGGER.i("Result: %s Location: x %f  y %f", String.valueOf(result), location.right, location.bottom);
                     results.add(new Pair(String.valueOf(result), location));
@@ -483,7 +472,7 @@ public class DetectorActivity extends CameraActivity {
 
         Matrix matrix = new Matrix();
         matrix.postRotate(90);
-        Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        Bitmap rotatedBitmap = rotateBitmap(bitmap,90);
 
         Canvas canvas = new Canvas(rotatedBitmap);
         Paint paint = new Paint();
@@ -516,6 +505,12 @@ public class DetectorActivity extends CameraActivity {
         canvas.setBitmap(rotatedBitmap);
         LOGGER.i("took Screenshot");
         return rotatedBitmap;
+    }
+
+    private Bitmap rotateBitmap(Bitmap bitmap, int degrees){
+        Matrix matrix = new Matrix();
+        matrix.postRotate(degrees);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
     }
 }
 
