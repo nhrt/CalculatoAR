@@ -69,21 +69,26 @@ public class DetectorActivity extends CameraActivity {
             final DetectorActivity activity = activityReference.get();
 
             int[] imgArray;
-            Bitmap dstImg;
+            Bitmap dstImg = null;
             Mat homography = null;
 
 
-
             while (activity != null && !activity.isFinishing()) {
-                if(!activity.gotSolution) continue;
+                if(!activity.gotSolution){
+                    dstImg = null;
+                    continue;
+                }
+                if (dstImg != null){
+                    srcImg = dstImg;
+                }else{
+                    srcImg = activity.rgbFrameBitmap.copy(Bitmap.Config.ARGB_8888, true);
+                }
 
-                srcImg = activity.rgbFrameBitmap;
                 imgArray = activity.getRgbBytes();
                 if (imgArray != null) {
                     dstImg = Bitmap.createBitmap(activity.getRgbBytes(), 0, activity.previewWidth, activity.previewWidth, activity.previewHeight, Bitmap.Config.ARGB_8888);
-
                     try {
-                        homography = openCV.findHomography(srcImg, dstImg);
+                        homography = openCV.findHomography(dstImg,srcImg);
                     } catch (CvException cv) {
                         LOGGER.i("CV EXCEPTION while searching homography");
                     }
@@ -105,7 +110,7 @@ public class DetectorActivity extends CameraActivity {
                         result.second.top = (float) scene_corners.get(0, 0)[1];
                         result.second.bottom = (float) scene_corners.get(2, 0)[1];
                         result.second.left = (float) scene_corners.get(0, 0)[0];
-                        result.second.left = (float) scene_corners.get(1, 0)[0];
+                        result.second.right = (float) scene_corners.get(1, 0)[0];
 
                         // Core.line(img, new Point(scene_corners.get(0,0)), new Point(scene_corners.get(1,0)), new Scalar(0, 255, 0),4);
                     }
@@ -216,6 +221,7 @@ public class DetectorActivity extends CameraActivity {
 
         LOGGER.i("Initializing at size %dx%d", previewWidth, previewHeight);
         rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
+        rgbFrameBitmap = rgbFrameBitmap.copy(Bitmap.Config.ARGB_8888, true);
         croppedBitmap = Bitmap.createBitmap(cropSize, cropSize, Bitmap.Config.ARGB_8888);
 
         frameToCropTransform =

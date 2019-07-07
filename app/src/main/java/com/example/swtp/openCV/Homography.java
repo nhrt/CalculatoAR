@@ -27,8 +27,6 @@ public class Homography {
     public Mat findHomography(Bitmap img1, Bitmap img2){
         LOGGER.i("Searching homography");
 
-        Mat homoMat = null;
-
         //Save Images as grayscale bitmap
         Mat imgMat1 = new Mat();
         Mat imgMat2 = new Mat();
@@ -82,9 +80,13 @@ public class Homography {
         pointsMat1.fromList(points1);
         pointsMat2.fromList(points2);
         double ransacReprojThreshold = 3.0;
-        Mat H = Calib3d.findHomography( pointsMat1, pointsMat2, Calib3d.RANSAC, ransacReprojThreshold );
-
-        LOGGER.i("Found homography");
+        Mat H = null;
+        if(!pointsMat1.empty() && !pointsMat2.empty()){
+            H = Calib3d.findHomography( pointsMat1, pointsMat2, Calib3d.RANSAC, ransacReprojThreshold );
+            LOGGER.i("Found homography");
+        }else {
+            LOGGER.i("No enough Keypoints for Homography");
+        }
         return H;
     }
 }
