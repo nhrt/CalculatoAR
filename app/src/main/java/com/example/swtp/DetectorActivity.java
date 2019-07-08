@@ -102,12 +102,14 @@ public class DetectorActivity extends CameraActivity {
                     }
                 }
 
+
                 activity.runInBackground(new Runnable() {
                     @Override
                     public void run() {
-                        activity.resultView.invalidate();
+                        activity.resultView.setResult(activity.results);
                     }
                 });
+
             }
             return null;
 

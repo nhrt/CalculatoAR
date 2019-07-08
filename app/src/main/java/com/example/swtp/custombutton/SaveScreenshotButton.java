@@ -1,6 +1,6 @@
 package com.example.swtp.custombutton;
 
-import android.app.Activity;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.media.MediaScannerConnection;
