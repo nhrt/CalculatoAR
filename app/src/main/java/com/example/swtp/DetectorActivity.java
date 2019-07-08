@@ -1,30 +1,25 @@
 package com.example.swtp;
 
-import android.content.Intent;
+
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
-import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 
-import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.FileProvider;
-import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.Pair;
 import android.util.Size;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.Toast;
 
+import com.example.swtp.custombutton.SaveScreenshotButton;
+import com.example.swtp.custombutton.ShareScreenshotButton;
 import com.example.swtp.customview.ResultView;
 import com.example.swtp.env.BorderedText;
 import com.example.swtp.env.ImageUtils;
@@ -42,14 +37,11 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 
 
 public class DetectorActivity extends CameraActivity {
@@ -75,23 +67,23 @@ public class DetectorActivity extends CameraActivity {
 
 
             while (activity != null && !activity.isFinishing() && !stop) {
-                if(!activity.gotSolution){
+                if (!activity.gotSolution) {
                     dstImg = null;
                     continue;
                 }
-                if (dstImg != null){
+                if (dstImg != null) {
                     srcImg = dstImg;
-                }else{
-                    srcImg =  Bitmap.createBitmap(activity.getRgbBytes(), 0, activity.previewWidth, activity.previewWidth, activity.previewHeight, Bitmap.Config.ARGB_8888);
-                    srcImg = activity.rotateBitmap(srcImg,90);
+                } else {
+                    srcImg = Bitmap.createBitmap(activity.getRgbBytes(), 0, activity.previewWidth, activity.previewWidth, activity.previewHeight, Bitmap.Config.ARGB_8888);
+                    srcImg = activity.rotateBitmap(srcImg, 90);
                 }
 
                 imgArray = activity.getRgbBytes();
                 if (imgArray != null) {
                     dstImg = Bitmap.createBitmap(activity.getRgbBytes(), 0, activity.previewWidth, activity.previewWidth, activity.previewHeight, Bitmap.Config.ARGB_8888);
-                    dstImg = activity.rotateBitmap(dstImg,90);
+                    dstImg = activity.rotateBitmap(dstImg, 90);
                     try {
-                        homography = openCV.findHomography(srcImg,dstImg);
+                        homography = openCV.findHomography(srcImg, dstImg);
                     } catch (CvException cv) {
                         LOGGER.i("CV EXCEPTION while searching homography");
                     }
@@ -100,11 +92,11 @@ public class DetectorActivity extends CameraActivity {
                 if (homography != null && !homography.empty()) {
                     for (Pair<String, RectF> result : activity.results) {
                         Mat point = new Mat();
-                        point.push_back(new MatOfPoint2f(new Point(result.second.right,result.second.bottom)));
-                        Core.perspectiveTransform(point,point,homography);
-                        LOGGER.i("%f %f",(float)point.get(0,0)[0],(float)point.get(0,0)[1]);
-                        result.second.right = (float)point.get(0,0)[0];
-                        result.second.bottom = (float)point.get(0,0)[1];
+                        point.push_back(new MatOfPoint2f(new Point(result.second.right, result.second.bottom)));
+                        Core.perspectiveTransform(point, point, homography);
+                        LOGGER.i("%f %f", (float) point.get(0, 0)[0], (float) point.get(0, 0)[1]);
+                        result.second.right = (float) point.get(0, 0)[0];
+                        result.second.bottom = (float) point.get(0, 0)[1];
                     }
                 }
 
@@ -112,11 +104,9 @@ public class DetectorActivity extends CameraActivity {
                         new Runnable() {
                             @Override
                             public void run() {
-                                synchronized (activity.results){
                                     if(activity.resultView != null){
                                         activity.resultView.invalidate();
                                     }
-                                }
                             }
                         }
                 );
@@ -159,8 +149,8 @@ public class DetectorActivity extends CameraActivity {
     private List<Classifier.Recognition> recognition_buffer = new ArrayList<>();
     private List<Classifier.Recognition> recognitions;
     private UITask resultThread;
-    private FloatingActionButton btn_screenshot;
-    private FloatingActionButton btn_save;
+    private ShareScreenshotButton btn_screenshot;
+    private SaveScreenshotButton btn_save;
 
     @Override
     protected Size getDesiredPreviewFrameSize() {
@@ -237,8 +227,6 @@ public class DetectorActivity extends CameraActivity {
                 });
 
         resultView = findViewById(R.id.resultView);
-
-        //startUpdateThread();
     }
 
     @Override
@@ -350,28 +338,6 @@ public class DetectorActivity extends CameraActivity {
         }
     }
 
-    @Override
-    public synchronized void onStop() {
-        super.onStop();
-        counter = 0;
-        results.clear();
-        isWaiting = false;
-    }
-
-    @Override
-    public synchronized void onResume() {
-        super.onResume();
-        startUpdateThread();
-        readyForNextImage();
-    }
-
-
-    private void startUpdateThread() {
-        resultThread = new UITask(this);
-        resultThread.execute();
-    }
-
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
@@ -380,16 +346,15 @@ public class DetectorActivity extends CameraActivity {
             @Override
             public void onClick(View view) {
                 resultThread.stop = true;
-                Bitmap screenshot = takeScreenShot();
-                String path = saveScreenShot(screenshot);
+                Bitmap screenshot = btn_screenshot.takeScreenShot(getRgbBytes(), previewWidth, previewHeight, results);
+                String path = btn_screenshot.saveScreenShot(screenshot, timestamp);
                 File file = new File(path);
 
                 Uri imageUri = FileProvider.getUriForFile(
                         getApplicationContext(),
                         "com.example.swtp.provider",
                         file);
-
-                shareScreenShot(imageUri);
+                btn_screenshot.shareScreenShot(imageUri);
             }
         });
 
@@ -398,120 +363,50 @@ public class DetectorActivity extends CameraActivity {
             @Override
             public void onClick(View v) {
                 resultThread.stop = true;
-                Bitmap screenshot = takeScreenShot();
-                storeScreenShot(screenshot);
+                final Bitmap screenshot = btn_save.takeScreenShot(getRgbBytes(), previewWidth, previewHeight, results);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        btn_save.storeScreenShot(screenshot);
+                    }
+                });
+
             }
         });
         OpenCVLoader.initDebug();
     }
 
-    private void storeScreenShot(Bitmap screenshot) {
-        String root = Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES).toString();
-        File myDir = new File(root + "/CalculatoAR");
-        myDir.mkdirs();
-        int n = 10000;
-        Random generator = new Random();
-        n = generator.nextInt(n);
-        String fname = "Image-" + n + ".jpg";
-        File file = new File(myDir, fname);
-        if (file.exists()) file.delete();
-        try {
-            FileOutputStream out = new FileOutputStream(file);
-            screenshot.compress(Bitmap.CompressFormat.JPEG, 90, out);
-            out.flush();
-            out.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        MediaScannerConnection.scanFile(this, new String[]{file.toString()}, null,
-                new MediaScannerConnection.OnScanCompletedListener() {
-                    public void onScanCompleted(String path, Uri uri) {
-                        Log.i("ExternalStorage", "Scanned " + path + ":");
-                        Log.i("ExternalStorage", "-> uri=" + uri);
-                    }
-                });
-    }
-
-    private void shareScreenShot(Uri uri) {
-        final Uri finalUri = uri;
-
+    @Override
+    public synchronized void onResume() {
+        super.onResume();
         runInBackground(new Runnable() {
             @Override
             public void run() {
-                Intent intent = new Intent(android.content.Intent.ACTION_SEND);
-                intent.putExtra(Intent.EXTRA_STREAM, finalUri);
-                intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                intent.setType("image/png");
-                try {
-                    startActivity(intent);
-                } catch (android.content.ActivityNotFoundException ex) {
-                    ex.printStackTrace();
-                }
+                readyForNextImage();
             }
         });
+        startUpdateThread();
     }
 
-    private String saveScreenShot(Bitmap screenshot) {
-        File imagePath = new File(Environment.getExternalStorageDirectory() + "/screenshot" + timestamp + ".png");
-        FileOutputStream fos;
-
-        try {
-            fos = new FileOutputStream(imagePath);
-            screenshot.compress(Bitmap.CompressFormat.PNG, 100, fos);
-            fos.flush();
-            fos.close();
-        } catch (FileNotFoundException e) {
-            Log.e("GREC", e.getMessage(), e);
-        } catch (IOException e) {
-            Log.e("GREC", e.getMessage(), e);
-        }
-        LOGGER.i("Image saved at %s", imagePath.getPath());
-        return imagePath.getPath();
+    @Override
+    public synchronized void onStart() {
+        super.onStart();
     }
 
-    private Bitmap takeScreenShot() {
-        Bitmap bitmap = Bitmap.createBitmap(getRgbBytes(), previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
-
-        Matrix matrix = new Matrix();
-        matrix.postRotate(90);
-        Bitmap rotatedBitmap = rotateBitmap(bitmap,90);
-
-        Canvas canvas = new Canvas(rotatedBitmap);
-        Paint paint = new Paint();
-        paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.TRANSPARENT);
-        canvas.drawPaint(paint);
-
-        paint.setTextSize(60f);
-        paint.setColor(Color.BLACK);
-
-        int width = canvas.getWidth();
-        int height = canvas.getHeight();
-
-        DisplayMetrics dm = getResources().getDisplayMetrics();
-
-
-        int displayWidth = dm.widthPixels;
-        int displayHeight = dm.heightPixels;
-
-        synchronized (results) {
-            RectF pos;
-            for (Pair<String, RectF> result : results) {
-                pos = result.second;
-                pos.right = pos.right / displayWidth * width;
-                pos.bottom = pos.bottom / displayHeight * height;
-                canvas.drawText(result.first, result.second.right, result.second.bottom, paint);
-            }
-        }
-
-        canvas.setBitmap(rotatedBitmap);
-        LOGGER.i("took Screenshot");
-        return rotatedBitmap;
+    @Override
+    public synchronized void onStop() {
+        super.onStop();
+        counter = 0;
+        isWaiting = false;
+        results.clear();
     }
 
-    private Bitmap rotateBitmap(Bitmap bitmap, int degrees){
+    private void startUpdateThread() {
+        resultThread = new UITask(this);
+        resultThread.execute();
+    }
+
+    private Bitmap rotateBitmap(Bitmap bitmap, int degrees) {
         Matrix matrix = new Matrix();
         matrix.postRotate(degrees);
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);

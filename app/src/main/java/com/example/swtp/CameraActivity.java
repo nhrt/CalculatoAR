@@ -246,6 +246,7 @@ public abstract class CameraActivity extends Activity
             isProcessingFrame = true;
             Trace.beginSection("imageAvailable");
             final Plane[] planes = image.getPlanes();
+
             fillBytes(planes, yuvBytes);
             yRowStride = planes[0].getRowStride();
             final int uvRowStride = planes[1].getRowStride();
@@ -285,8 +286,6 @@ public abstract class CameraActivity extends Activity
                         }
                     }
             );
-
-            //processImage();
         } catch (final Exception e) {
             LOGGER.e(e, "Exception!");
             Trace.endSection();
@@ -396,6 +395,8 @@ public abstract class CameraActivity extends Activity
     protected void readyForNextImage() {
         if (postInferenceCallback != null) {
             postInferenceCallback.run();
+        }else{
+            LOGGER.i("postinferanceCallball is null");
         }
     }
 
