@@ -353,7 +353,9 @@ public class DetectorActivity extends CameraActivity {
     @Override
     public synchronized void onStop() {
         super.onStop();
-
+        counter = 0;
+        results.clear();
+        isWaiting = false;
     }
 
     @Override

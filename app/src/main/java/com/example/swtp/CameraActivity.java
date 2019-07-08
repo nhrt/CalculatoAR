@@ -233,7 +233,7 @@ public abstract class CameraActivity extends Activity
             rgbBytes = new int[previewWidth * previewHeight];
         }
         try {
-            final Image image = reader.acquireNextImage();
+            final Image image = reader.acquireLatestImage();
 
             if (image == null) {
                 return;
@@ -268,11 +268,12 @@ public abstract class CameraActivity extends Activity
                         }
                     };
 
+            image.close();
+
             postInferenceCallback =
                     new Runnable() {
                         @Override
                         public void run() {
-                            image.close();
                             isProcessingFrame = false;
                         }
                     };
