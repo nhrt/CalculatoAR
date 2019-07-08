@@ -42,7 +42,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Currency;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -359,13 +358,18 @@ public class DetectorActivity extends CameraActivity {
         });
 
         btn_save = findViewById(R.id.btn_save);
-        final Activity current = this;
         btn_save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 resultThread.stop = true;
-                Bitmap screenshot = btn_save.takeScreenShot(getRgbBytes(), previewWidth,previewHeight, results);
-                btn_save.storeScreenShot(screenshot, current);
+                final Bitmap screenshot = btn_save.takeScreenShot(getRgbBytes(), previewWidth,previewHeight, results);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        btn_save.storeScreenShot(screenshot);
+                    }
+                });
+
             }
         });
         OpenCVLoader.initDebug();

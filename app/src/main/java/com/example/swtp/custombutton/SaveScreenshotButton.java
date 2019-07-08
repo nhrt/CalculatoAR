@@ -10,7 +10,6 @@ import android.util.AttributeSet;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.lang.ref.WeakReference;
 import java.util.Random;
 
 public class SaveScreenshotButton extends ScreenshotButton {
@@ -18,9 +17,7 @@ public class SaveScreenshotButton extends ScreenshotButton {
         super(context, attrs);
     }
 
-    public void storeScreenShot(Bitmap screenshot, Activity current) {
-
-        WeakReference<Activity> activityReference = new WeakReference<>(current);
+    public void storeScreenShot(Bitmap screenshot) {
         String root = Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES).toString();
         File myDir = new File(root + "/CalculatoAR");
@@ -33,14 +30,8 @@ public class SaveScreenshotButton extends ScreenshotButton {
         File file = new File(myDir, fname);
         if (file.exists()) file.delete();
         try {
-            final FileOutputStream out = new FileOutputStream(file);
-            final Bitmap finalBitmap = screenshot;
-            current.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    finalBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
-                }
-            });
+            FileOutputStream out = new FileOutputStream(file);
+            screenshot.compress(Bitmap.CompressFormat.JPEG, 90, out);
 
             out.flush();
             out.close();

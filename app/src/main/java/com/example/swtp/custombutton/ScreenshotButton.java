@@ -27,9 +27,6 @@ public abstract class ScreenshotButton extends FloatingActionButton {
 
     public Bitmap takeScreenShot(int[] bytes, int previewWidth, int previewHeight, List<Pair<String, RectF>> results) {
         Bitmap bitmap = Bitmap.createBitmap(bytes, previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
-
-        Matrix matrix = new Matrix();
-        matrix.postRotate(90);
         Bitmap rotatedBitmap = rotateBitmap(bitmap,90);
 
         Canvas canvas = new Canvas(rotatedBitmap);
