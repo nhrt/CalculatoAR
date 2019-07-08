@@ -28,7 +28,7 @@
         android:background="#000"
         tools:context="com.example.swtp.CameraActivity" />
 
-    <android.support.design.widget.FloatingActionButton
+    <com.example.swtp.custombutton.SaveScreenshotButton
         android:id="@+id/btn_save"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -40,7 +40,7 @@
         android:layout_marginBottom="5dp"
         app:srcCompat="@android:drawable/ic_menu_gallery" />
 
-    <android.support.design.widget.FloatingActionButton
+    <com.example.swtp.custombutton.ShareScreenshotButton
         android:id="@+id/btn_screenshot"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
