@@ -51,7 +51,7 @@ public class Homography {
         matcher.knnMatch(descriptor1, descriptor2, knnMatches, 2);
 
         //Filter matches
-        float ratioThresh = 0.75f;
+        float ratioThresh = 0.60f;
         List<DMatch> listOfGoodMatches = new ArrayList<>();
         for (int i = 0; i < knnMatches.size(); i++) {
             if (knnMatches.get(i).rows() > 1) {

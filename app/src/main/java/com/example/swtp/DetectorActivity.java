@@ -57,6 +57,7 @@ public class DetectorActivity extends CameraActivity {
 
     private static class UITask extends AsyncTask {
         private WeakReference<DetectorActivity> activityReference;
+        public boolean stop;
 
         // only retain a weak reference to the activity
         UITask(DetectorActivity context) {
@@ -70,9 +71,10 @@ public class DetectorActivity extends CameraActivity {
             int[] imgArray;
             Bitmap dstImg = null;
             Mat homography = null;
+            stop = false;
 
 
-            while (activity != null && !activity.isFinishing()) {
+            while (activity != null && !activity.isFinishing() && !stop) {
                 if(!activity.gotSolution){
                     dstImg = null;
                     continue;
@@ -156,7 +158,7 @@ public class DetectorActivity extends CameraActivity {
     private int counter;
     private List<Classifier.Recognition> recognition_buffer = new ArrayList<>();
     private List<Classifier.Recognition> recognitions;
-    private static AsyncTask resultThread;
+    private UITask resultThread;
     private FloatingActionButton btn_screenshot;
     private FloatingActionButton btn_save;
 
@@ -351,7 +353,7 @@ public class DetectorActivity extends CameraActivity {
     @Override
     public synchronized void onStop() {
         super.onStop();
-        resultThread.cancel(true);
+
     }
 
     @Override
@@ -375,7 +377,7 @@ public class DetectorActivity extends CameraActivity {
         btn_screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                resultThread.cancel(true);
+                resultThread.stop = true;
                 Bitmap screenshot = takeScreenShot();
                 String path = saveScreenShot(screenshot);
                 File file = new File(path);
@@ -393,7 +395,7 @@ public class DetectorActivity extends CameraActivity {
         btn_save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                resultThread.cancel(true);
+                resultThread.stop = true;
                 Bitmap screenshot = takeScreenShot();
                 storeScreenShot(screenshot);
             }
