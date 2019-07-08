@@ -1,8 +1,6 @@
 package com.example.swtp;
 
 
-import android.app.Activity;
-import android.content.ContentUris;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
@@ -69,23 +67,23 @@ public class DetectorActivity extends CameraActivity {
 
 
             while (activity != null && !activity.isFinishing() && !stop) {
-                if(!activity.gotSolution){
+                if (!activity.gotSolution) {
                     dstImg = null;
                     continue;
                 }
-                if (dstImg != null){
+                if (dstImg != null) {
                     srcImg = dstImg;
-                }else{
-                    srcImg =  Bitmap.createBitmap(activity.getRgbBytes(), 0, activity.previewWidth, activity.previewWidth, activity.previewHeight, Bitmap.Config.ARGB_8888);
-                    srcImg = activity.rotateBitmap(srcImg,90);
+                } else {
+                    srcImg = Bitmap.createBitmap(activity.getRgbBytes(), 0, activity.previewWidth, activity.previewWidth, activity.previewHeight, Bitmap.Config.ARGB_8888);
+                    srcImg = activity.rotateBitmap(srcImg, 90);
                 }
 
                 imgArray = activity.getRgbBytes();
                 if (imgArray != null) {
                     dstImg = Bitmap.createBitmap(activity.getRgbBytes(), 0, activity.previewWidth, activity.previewWidth, activity.previewHeight, Bitmap.Config.ARGB_8888);
-                    dstImg = activity.rotateBitmap(dstImg,90);
+                    dstImg = activity.rotateBitmap(dstImg, 90);
                     try {
-                        homography = openCV.findHomography(srcImg,dstImg);
+                        homography = openCV.findHomography(srcImg, dstImg);
                     } catch (CvException cv) {
                         LOGGER.i("CV EXCEPTION while searching homography");
                     }
@@ -94,11 +92,11 @@ public class DetectorActivity extends CameraActivity {
                 if (homography != null && !homography.empty()) {
                     for (Pair<String, RectF> result : activity.results) {
                         Mat point = new Mat();
-                        point.push_back(new MatOfPoint2f(new Point(result.second.right,result.second.bottom)));
-                        Core.perspectiveTransform(point,point,homography);
-                        LOGGER.i("%f %f",(float)point.get(0,0)[0],(float)point.get(0,0)[1]);
-                        result.second.right = (float)point.get(0,0)[0];
-                        result.second.bottom = (float)point.get(0,0)[1];
+                        point.push_back(new MatOfPoint2f(new Point(result.second.right, result.second.bottom)));
+                        Core.perspectiveTransform(point, point, homography);
+                        LOGGER.i("%f %f", (float) point.get(0, 0)[0], (float) point.get(0, 0)[1]);
+                        result.second.right = (float) point.get(0, 0)[0];
+                        result.second.bottom = (float) point.get(0, 0)[1];
                     }
                 }
 
@@ -106,7 +104,9 @@ public class DetectorActivity extends CameraActivity {
                 activity.runInBackground(new Runnable() {
                     @Override
                     public void run() {
-                        activity.resultView.setResult(activity.results);
+                        if (activity.resultView != null) {
+                            activity.resultView.invalidate();
+                        }
                     }
                 });
 
@@ -347,7 +347,7 @@ public class DetectorActivity extends CameraActivity {
             @Override
             public void onClick(View view) {
                 resultThread.stop = true;
-                Bitmap screenshot = btn_screenshot.takeScreenShot(getRgbBytes(),previewWidth,previewHeight,results);
+                Bitmap screenshot = btn_screenshot.takeScreenShot(getRgbBytes(), previewWidth, previewHeight, results);
                 String path = btn_screenshot.saveScreenShot(screenshot, timestamp);
                 File file = new File(path);
 
@@ -364,7 +364,7 @@ public class DetectorActivity extends CameraActivity {
             @Override
             public void onClick(View v) {
                 resultThread.stop = true;
-                final Bitmap screenshot = btn_save.takeScreenShot(getRgbBytes(), previewWidth,previewHeight, results);
+                final Bitmap screenshot = btn_save.takeScreenShot(getRgbBytes(), previewWidth, previewHeight, results);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -407,7 +407,7 @@ public class DetectorActivity extends CameraActivity {
         resultThread.execute();
     }
 
-    private Bitmap rotateBitmap(Bitmap bitmap, int degrees){
+    private Bitmap rotateBitmap(Bitmap bitmap, int degrees) {
         Matrix matrix = new Matrix();
         matrix.postRotate(degrees);
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
