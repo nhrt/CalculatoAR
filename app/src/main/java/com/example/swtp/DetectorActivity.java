@@ -100,16 +100,18 @@ public class DetectorActivity extends CameraActivity {
                     }
                 }
 
-
-                activity.runInBackground(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (activity.resultView != null) {
-                            activity.resultView.invalidate();
+                activity.runOnUiThread(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                synchronized (activity.results){
+                                    if(activity.resultView != null){
+                                        activity.resultView.invalidate();
+                                    }
+                                }
+                            }
                         }
-                    }
-                });
-
+                );
             }
             return null;
 
