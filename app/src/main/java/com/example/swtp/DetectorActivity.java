@@ -384,6 +384,14 @@ public class DetectorActivity extends CameraActivity {
         super.onStart();
     }
 
+    @Override
+    public synchronized void onStop() {
+        super.onStop();
+        counter = 0;
+        isWaiting = false;
+        results.clear();
+    }
+
     private void startUpdateThread() {
         resultThread = new UITask(this);
         resultThread.execute();
