@@ -32,7 +32,6 @@ public class SaveScreenshotButton extends ScreenshotButton {
         try {
             FileOutputStream out = new FileOutputStream(file);
             screenshot.compress(Bitmap.CompressFormat.JPEG, 90, out);
-
             out.flush();
             out.close();
         } catch (Exception e) {

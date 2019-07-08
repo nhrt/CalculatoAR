@@ -104,11 +104,9 @@ public class DetectorActivity extends CameraActivity {
                         new Runnable() {
                             @Override
                             public void run() {
-                                synchronized (activity.results){
                                     if(activity.resultView != null){
                                         activity.resultView.invalidate();
                                     }
-                                }
                             }
                         }
                 );
