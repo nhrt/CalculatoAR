@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Homography {
-    Logger LOGGER = new Logger();
+    private Logger LOGGER = new Logger();
 
     public Mat findHomography(Bitmap img1, Bitmap img2){
         LOGGER.i("Searching homography");
@@ -84,7 +84,7 @@ public class Homography {
             H = Calib3d.findHomography( pointsMat1, pointsMat2, Calib3d.RANSAC, ransacReprojThreshold );
             LOGGER.i("Found homography");
         }else {
-            LOGGER.i("No enough Keypoints for Homography");
+            LOGGER.i("Not enough Keypoints for Homography");
         }
         return H;
     }

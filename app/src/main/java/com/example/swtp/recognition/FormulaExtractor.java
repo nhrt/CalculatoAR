@@ -36,7 +36,7 @@ public class FormulaExtractor {
         while (iterator.hasNext()) {
             tmp = iterator.next();
             if (tmp.getTitle().equals("formula")) {
-                formula = new ArrayList<Classifier.Recognition>();
+                formula = new ArrayList<>();
                 formula.add(tmp);
                 formulas.add(formula);
             }

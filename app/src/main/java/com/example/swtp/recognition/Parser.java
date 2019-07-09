@@ -37,7 +37,7 @@ public class Parser {
         Classifier.Recognition tmp, last;
 
         last = mappedRecognitions.get(mappedRecognitions.size() - 1);
-        if(last.getTitle() == "minus"){
+        if(last.getTitle().equals("minus")){
             mappedRecognitions.remove(last);
             tmp = new Classifier.Recognition(last.getId(),"equals",last.getConfidence(), last.getLocation());
             mappedRecognitions.add(tmp);
