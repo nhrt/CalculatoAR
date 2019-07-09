@@ -11,7 +11,6 @@ import android.support.design.widget.FloatingActionButton;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Pair;
-
 import com.example.swtp.env.Logger;
 
 import java.util.List;
@@ -25,7 +24,10 @@ public abstract class ScreenshotButton extends FloatingActionButton {
         this.context = context;
     }
 
+
+
     public Bitmap takeScreenShot(int[] bytes, int previewWidth, int previewHeight, List<Pair<String, RectF>> results) {
+
         Bitmap bitmap = Bitmap.createBitmap(bytes, previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
         Bitmap rotatedBitmap = rotateBitmap(bitmap,90);
 
@@ -67,4 +69,6 @@ public abstract class ScreenshotButton extends FloatingActionButton {
         matrix.postRotate(degrees);
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
     }
+
+
 }

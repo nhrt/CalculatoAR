@@ -16,6 +16,9 @@ import android.util.Pair;
 import android.util.Size;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -159,6 +162,7 @@ public class DetectorActivity extends CameraActivity {
     private OverlayView trackingOverlay;
     private ResultView resultView;
     private ProgressBar spinner;
+    private FrameLayout flash;
 
     @Override
     protected Size getDesiredPreviewFrameSize() {
@@ -343,14 +347,13 @@ public class DetectorActivity extends CameraActivity {
 
         //Initialize the Clicklistener for the screenshot button
         btn_screenshot = findViewById(R.id.btn_screenshot);
+        flash = findViewById(R.id.flash);
         btn_screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //resultThread.stop = true;
                 Bitmap screenshot = btn_screenshot.takeScreenShot(getRgbBytes(), previewWidth, previewHeight, results);
                 String path = btn_screenshot.saveScreenShot(screenshot, timestamp);
                 File file = new File(path);
-
                 Uri imageUri = FileProvider.getUriForFile(
                         getApplicationContext(),
                         "com.example.swtp.provider",
@@ -364,11 +367,11 @@ public class DetectorActivity extends CameraActivity {
         btn_save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //resultThread.stop = true;
                 final Bitmap screenshot = btn_save.takeScreenShot(getRgbBytes(), previewWidth, previewHeight, results);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        flashScreen(500);
                         btn_save.storeScreenShot(screenshot);
                     }
                 });
@@ -410,6 +413,34 @@ public class DetectorActivity extends CameraActivity {
         resultThread = new UITask(this);
         resultThread.execute();
         LOGGER.i("New UI Task initialized");
+    }
+
+    private void flashScreen(int duration){
+        if(flash == null){
+            LOGGER.i("no flash found");
+            return;
+        }
+        AlphaAnimation fade = new AlphaAnimation(1, 0);
+        fade.setDuration(duration);
+        fade.setAnimationListener(new Animation.AnimationListener() {
+
+            @Override
+            public void onAnimationStart(Animation animation) {
+                flash.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                flash.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+
+        });
+        flash.startAnimation(fade);
     }
 
     private Bitmap rotateBitmap(Bitmap bitmap, int degrees) {

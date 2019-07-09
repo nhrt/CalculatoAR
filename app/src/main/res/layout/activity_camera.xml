@@ -20,8 +20,6 @@
     android:layout_height="match_parent"
     tools:context="com.example.swtp.CameraActivity" >
 
-
-
     <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:id="@+id/container"
@@ -38,8 +36,7 @@
         android:layout_gravity="top|end"
         android:layout_marginRight="5dp"
         android:layout_marginBottom="5dp"
-        android:scaleType="center"
-        />
+        android:scaleType="center" />
 
     <com.example.swtp.custombutton.SaveScreenshotButton
         android:id="@+id/btn_save"
@@ -64,5 +61,12 @@
         app:fabSize="auto"
         android:scaleType="center"
         app:srcCompat="@android:drawable/ic_dialog_email" />
+    <FrameLayout
+        android:id="@+id/flash"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="#FFFFFF"
+        android:visibility="gone"
+        />
 
 </android.support.design.widget.CoordinatorLayout>
