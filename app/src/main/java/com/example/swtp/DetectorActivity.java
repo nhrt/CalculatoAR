@@ -71,9 +71,15 @@ public class DetectorActivity extends CameraActivity {
 
 
             while (activity != null && !activity.isFinishing() && !stop) {
-                if (!activity.isWaiting) {
-                    dstImg = null;
-                    continue;
+                synchronized (this){
+                    while(!activity.finishedCalc) {
+                        try {
+                            dstImg = null;
+                            this.wait();
+                        } catch (InterruptedException e) {
+                            LOGGER.i("UITask interrupted while waiting");
+                        }
+                    }
                 }
                 if (dstImg != null) {
                     srcImg = dstImg;
@@ -145,7 +151,7 @@ public class DetectorActivity extends CameraActivity {
     private Parser parser = new Parser();
 
 
-    private boolean isWaiting; //no new results while true
+    private boolean finishedCalc; //no new results while true
     private int counter; //counter how many recognition loops where executed
     private List<Classifier.Recognition> recognition_buffer = new ArrayList<>();
     private List<Classifier.Recognition> recognitions;
@@ -280,7 +286,7 @@ public class DetectorActivity extends CameraActivity {
     }
 
     protected void processLoop() {
-        if (isWaiting) {
+        if (finishedCalc) {
             readyForNextImage();
             return;
         }
@@ -316,13 +322,16 @@ public class DetectorActivity extends CameraActivity {
                 }
             }
 
-            isWaiting = true;
+            finishedCalc = true;
+            synchronized (resultThread){
+                resultThread.notify();
+            }
             updateSpinner(false);
 
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    isWaiting = false;
+                    finishedCalc = false;
                     updateSpinner(true);
                 }
             }, gotSolution ? Settings.DETECTION_INTERVAL_SECONDS * 1000 : 0);
@@ -383,7 +392,7 @@ public class DetectorActivity extends CameraActivity {
     public synchronized void onStop() {
         super.onStop();
         counter = 0;
-        isWaiting = false;
+        finishedCalc = false;
         results.clear();
     }
 
