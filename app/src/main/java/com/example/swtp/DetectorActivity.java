@@ -48,10 +48,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class DetectorActivity extends CameraActivity {
 
-
     private static class UITask extends AsyncTask {
         private WeakReference<DetectorActivity> activityReference;
-        private boolean stop; //flag to stop the UITask from outside
         private Homography openCV = new Homography();
 
         // only retain a weak reference to the activity
@@ -62,15 +60,13 @@ public class DetectorActivity extends CameraActivity {
         @Override
         protected String doInBackground(Object[] objects) {
             final DetectorActivity activity = activityReference.get();
-
+            LOGGER.i("UI Task started");
             int[] imgArray;
             Bitmap dstImg = null;
             Bitmap srcImg;
             Mat homography = null;
-            stop = false;
 
-
-            while (activity != null && !activity.isFinishing() && !stop) {
+            while (activity != null && !activity.isFinishing() && !isCancelled()) {
                 synchronized (this){
                     while(!activity.finishedCalc) {
                         try {
@@ -78,6 +74,7 @@ public class DetectorActivity extends CameraActivity {
                             this.wait();
                         } catch (InterruptedException e) {
                             LOGGER.i("UITask interrupted while waiting");
+                            return null;
                         }
                     }
                 }
@@ -290,7 +287,7 @@ public class DetectorActivity extends CameraActivity {
             readyForNextImage();
             return;
         }
-        boolean gotSolution = false;
+        //boolean gotSolution = false;
 
         if (counter < Settings.AMOUNT_SSD) {
             counter++;
@@ -316,17 +313,18 @@ public class DetectorActivity extends CameraActivity {
                 RectF location = formula.get(formula.size() - 1).getLocation();
 
                 if (!Double.isNaN(result) && location != null) {
-                    gotSolution = true;
+                    finishedCalc = true;
                     LOGGER.i("Result: %s Location: x %f  y %f", String.valueOf(result), location.right, location.bottom);
                     results.add(new Pair<>(String.valueOf(result), location));
                 }
             }
 
-            finishedCalc = true;
-            synchronized (resultThread){
-                resultThread.notify();
+            if(finishedCalc){
+                synchronized (resultThread){
+                    resultThread.notify();
+                }
             }
-            updateSpinner(false);
+            updateSpinner(!finishedCalc);
 
             new Handler().postDelayed(new Runnable() {
                 @Override
@@ -334,7 +332,7 @@ public class DetectorActivity extends CameraActivity {
                     finishedCalc = false;
                     updateSpinner(true);
                 }
-            }, gotSolution ? Settings.DETECTION_INTERVAL_SECONDS * 1000 : 0);
+            }, finishedCalc ? Settings.DETECTION_INTERVAL_SECONDS * 1000 : 0);
 
             readyForNextImage();
         }
@@ -348,7 +346,7 @@ public class DetectorActivity extends CameraActivity {
         btn_screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                resultThread.stop = true;
+                //resultThread.stop = true;
                 Bitmap screenshot = btn_screenshot.takeScreenShot(getRgbBytes(), previewWidth, previewHeight, results);
                 String path = btn_screenshot.saveScreenShot(screenshot, timestamp);
                 File file = new File(path);
@@ -366,7 +364,7 @@ public class DetectorActivity extends CameraActivity {
         btn_save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                resultThread.stop = true;
+                //resultThread.stop = true;
                 final Bitmap screenshot = btn_save.takeScreenShot(getRgbBytes(), previewWidth, previewHeight, results);
                 runOnUiThread(new Runnable() {
                     @Override
@@ -391,6 +389,7 @@ public class DetectorActivity extends CameraActivity {
     @Override
     public synchronized void onStop() {
         super.onStop();
+        resultThread.cancel(true);
         counter = 0;
         finishedCalc = false;
         results.clear();
@@ -410,6 +409,7 @@ public class DetectorActivity extends CameraActivity {
     private void startUpdateThread() {
         resultThread = new UITask(this);
         resultThread.execute();
+        LOGGER.i("New UI Task initialized");
     }
 
     private Bitmap rotateBitmap(Bitmap bitmap, int degrees) {

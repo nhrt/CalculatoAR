@@ -49,8 +49,10 @@ public class ShareScreenshotButton extends ScreenshotButton {
             fos.flush();
             fos.close();
         } catch (FileNotFoundException e) {
+            LOGGER.i("File not found");
             LOGGER.e("GREC", e.getMessage(), e);
         } catch (IOException e) {
+            LOGGER.i("IOException");
             LOGGER.e("GREC", e.getMessage(), e);
         }
         LOGGER.i("Image saved at %s", imagePath.getPath());
