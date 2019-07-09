@@ -99,20 +99,19 @@ public class DetectorActivity extends CameraActivity {
                         result.second.bottom = (float) point.get(0, 0)[1];
                     }
                 }
-
-                activity.runOnUiThread(
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                    if(activity.resultView != null){
-                                        activity.resultView.invalidate();
-                                    }
-                            }
-                        }
-                );
+                publishProgress();
             }
             return null;
 
+        }
+
+        @Override
+        protected void onProgressUpdate(Object[] values) {
+            super.onProgressUpdate(values);
+            final DetectorActivity activity = activityReference.get();
+            if(activity != null && !activity.isFinishing() && activity.resultView != null){
+                activity.resultView.invalidate();
+            }
         }
     }
 
