@@ -15,4 +15,6 @@ public final class Settings {
     static boolean SHOW_RECTS = false;
     static final int DETECTION_INTERVAL_SECONDS = 5;
     static final int AMOUNT_SSD = 3;
+    static final int RESULT_OFFSET_X = -75;
+    static final int RESULT_OFFSET_Y = 300;
 }

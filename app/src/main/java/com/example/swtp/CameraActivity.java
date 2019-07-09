@@ -209,7 +209,7 @@ public abstract class CameraActivity extends Activity
                         isProcessingFrame = false;
                     }
                 };
-        //processImage();
+
         runInBackground(
                 new Runnable() {
                     @Override
@@ -218,6 +218,7 @@ public abstract class CameraActivity extends Activity
                     }
                 }
         );
+
     }
 
     /**
@@ -278,6 +279,14 @@ public abstract class CameraActivity extends Activity
                             isProcessingFrame = false;
                         }
                     };
+            new Thread(){
+                @Override
+                public void run() {
+                    super.run();
+                    processLoop();
+                }
+            }.run();
+            /*
             runInBackground(
                     new Runnable() {
                         @Override
@@ -286,6 +295,7 @@ public abstract class CameraActivity extends Activity
                         }
                     }
             );
+            */
         } catch (final Exception e) {
             LOGGER.e(e, "Exception!");
             Trace.endSection();

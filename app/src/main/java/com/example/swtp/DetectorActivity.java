@@ -16,6 +16,7 @@ import android.util.Pair;
 import android.util.Size;
 import android.util.TypedValue;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.example.swtp.custombutton.SaveScreenshotButton;
@@ -42,6 +43,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 public class DetectorActivity extends CameraActivity {
@@ -49,25 +51,27 @@ public class DetectorActivity extends CameraActivity {
 
     private static class UITask extends AsyncTask {
         private WeakReference<DetectorActivity> activityReference;
-        public boolean stop;
+        private boolean stop; //flag to stop the UITask from outside
+        private Homography openCV = new Homography();
 
         // only retain a weak reference to the activity
         UITask(DetectorActivity context) {
-            activityReference = new WeakReference<>(context);
+            this.activityReference = new WeakReference<>(context);
         }
 
         @Override
-        protected Object doInBackground(Object[] objects) {
+        protected String doInBackground(Object[] objects) {
             final DetectorActivity activity = activityReference.get();
 
             int[] imgArray;
             Bitmap dstImg = null;
+            Bitmap srcImg;
             Mat homography = null;
             stop = false;
 
 
             while (activity != null && !activity.isFinishing() && !stop) {
-                if (!activity.gotSolution) {
+                if (!activity.isWaiting) {
                     dstImg = null;
                     continue;
                 }
@@ -102,17 +106,21 @@ public class DetectorActivity extends CameraActivity {
                 publishProgress();
             }
             return null;
-
         }
 
         @Override
-        protected void onProgressUpdate(Object[] values) {
-            super.onProgressUpdate(values);
+        protected void onProgressUpdate(Object[] objects) {
+            super.onProgressUpdate();
             final DetectorActivity activity = activityReference.get();
-            if(activity != null && !activity.isFinishing() && activity.resultView != null){
+
+            if (activity != null && !activity.isFinishing() && activity.resultView != null) {
+                if (!activity.resultView.hasResult()) {
+                    activity.resultView.setResult(activity.results);
+                }
                 activity.resultView.invalidate();
             }
         }
+
     }
 
     private static final Logger LOGGER = new Logger();
@@ -122,34 +130,32 @@ public class DetectorActivity extends CameraActivity {
     private MultiBoxTracker tracker;
     private Bitmap rgbFrameBitmap = null;
     private Bitmap croppedBitmap = null;
-    private Bitmap cropCopyBitmap = null;
     private Matrix frameToCropTransform;
     private Matrix cropToFrameTransform;
-    private OverlayView trackingOverlay;
-    private ResultView resultView;
 
-    private List<Pair<String, RectF>> results = new ArrayList<>();
+    private List<Pair<String, RectF>> results = new CopyOnWriteArrayList<>();
+    //private List<Pair<String, RectF>> results = new ArrayList<>();
 
     private Classifier detector;
     private static final boolean SAVE_PREVIEW_BITMAP = false;
-    private boolean computingDetection = false;
     private byte[] luminanceCopy;
     private long timestamp = 0;
-
 
     private FormulaExtractor formulaExtractor = new FormulaExtractor();
     private Parser parser = new Parser();
 
-    private static Bitmap srcImg;
-    private static Homography openCV = new Homography();
-    private boolean isWaiting;
-    private boolean gotSolution;
-    private int counter;
+
+    private boolean isWaiting; //no new results while true
+    private int counter; //counter how many recognition loops where executed
     private List<Classifier.Recognition> recognition_buffer = new ArrayList<>();
     private List<Classifier.Recognition> recognitions;
     private UITask resultThread;
+
     private ShareScreenshotButton btn_screenshot;
     private SaveScreenshotButton btn_save;
+    private OverlayView trackingOverlay;
+    private ResultView resultView;
+    private ProgressBar spinner;
 
     @Override
     protected Size getDesiredPreviewFrameSize() {
@@ -236,7 +242,6 @@ public class DetectorActivity extends CameraActivity {
         final long currTimestamp = timestamp;
 
 
-        computingDetection = true;
         rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
         if (luminanceCopy == null) {
             luminanceCopy = new byte[originalLuminance.length];
@@ -251,19 +256,16 @@ public class DetectorActivity extends CameraActivity {
         }
 
         LOGGER.i("Running detection on image " + currTimestamp);
-        final List<Classifier.Recognition> results = detector.recognizeImage(croppedBitmap);
-
-        cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
-
+        final List<Classifier.Recognition> tmpResults = detector.recognizeImage(croppedBitmap);
 
         final List<Classifier.Recognition> mappedRecognitions = new LinkedList<>();
 
-        for (final Classifier.Recognition result : results) {
+        for (final Classifier.Recognition result : tmpResults) {
             final RectF location = result.getLocation();
             if (location != null && result.getConfidence() >= Settings.MINIMUM_CONFIDENCE_TF_OD_API) {
                 //canvas.drawRect(location, paint);
                 cropToFrameTransform.mapRect(location);
-                location.offset(-75, 300);
+                location.offset(Settings.RESULT_OFFSET_X, Settings.RESULT_OFFSET_Y);
                 result.setLocation(location);
                 mappedRecognitions.add(result);
             }
@@ -275,9 +277,6 @@ public class DetectorActivity extends CameraActivity {
         }
 
         recognitions = mappedRecognitions;
-
-
-        computingDetection = false;
     }
 
     protected void processLoop() {
@@ -285,7 +284,7 @@ public class DetectorActivity extends CameraActivity {
             readyForNextImage();
             return;
         }
-        gotSolution = false;
+        boolean gotSolution = false;
 
         if (counter < Settings.AMOUNT_SSD) {
             counter++;
@@ -313,23 +312,18 @@ public class DetectorActivity extends CameraActivity {
                 if (!Double.isNaN(result) && location != null) {
                     gotSolution = true;
                     LOGGER.i("Result: %s Location: x %f  y %f", String.valueOf(result), location.right, location.bottom);
-                    results.add(new Pair(String.valueOf(result), location));
+                    results.add(new Pair<>(String.valueOf(result), location));
                 }
             }
 
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    resultView.setResult(results);
-                }
-            });
-
             isWaiting = true;
+            updateSpinner(false);
 
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     isWaiting = false;
+                    updateSpinner(true);
                 }
             }, gotSolution ? Settings.DETECTION_INTERVAL_SECONDS * 1000 : 0);
 
@@ -340,6 +334,7 @@ public class DetectorActivity extends CameraActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        //Initialize the Clicklistener for the screenshot button
         btn_screenshot = findViewById(R.id.btn_screenshot);
         btn_screenshot.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -357,6 +352,7 @@ public class DetectorActivity extends CameraActivity {
             }
         });
 
+        //Initialize the Clicklistener for the StoreScreenshotbutton
         btn_save = findViewById(R.id.btn_save);
         btn_save.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -372,24 +368,15 @@ public class DetectorActivity extends CameraActivity {
 
             }
         });
+        spinner = findViewById(R.id.spinner);
+        //Force the OpenCV libs to load
         OpenCVLoader.initDebug();
     }
 
     @Override
     public synchronized void onResume() {
         super.onResume();
-        runInBackground(new Runnable() {
-            @Override
-            public void run() {
-                readyForNextImage();
-            }
-        });
         startUpdateThread();
-    }
-
-    @Override
-    public synchronized void onStart() {
-        super.onStart();
     }
 
     @Override
@@ -398,6 +385,17 @@ public class DetectorActivity extends CameraActivity {
         counter = 0;
         isWaiting = false;
         results.clear();
+    }
+
+    private void updateSpinner(boolean spin) {
+        final int flag = spin ? View.VISIBLE : View.GONE;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                spinner.setVisibility(flag);
+            }
+
+        });
     }
 
     private void startUpdateThread() {
