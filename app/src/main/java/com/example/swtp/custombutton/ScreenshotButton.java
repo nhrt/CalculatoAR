@@ -25,7 +25,14 @@ public abstract class ScreenshotButton extends FloatingActionButton {
     }
 
 
-
+    /**
+     * takes bytearray and a result-list to draw a new image which will be returned
+     * @param bytes     rgbByteArray of the image
+     * @param previewWidth  width of the image
+     * @param previewHeight height of the image
+     * @param results   results that will be added
+     * @return Bitmap of the image with printed results on it
+     */
     public Bitmap takeScreenShot(int[] bytes, int previewWidth, int previewHeight, List<Pair<String, RectF>> results) {
 
         Bitmap bitmap = Bitmap.createBitmap(bytes, previewWidth, previewHeight, Bitmap.Config.ARGB_8888);

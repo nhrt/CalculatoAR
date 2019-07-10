@@ -11,6 +11,9 @@ import android.view.View;
 
 import java.util.List;
 
+/**
+ * View to show results on a canvas
+ */
 public class ResultView extends View {
     private List<Pair<String, RectF>> results;
     private boolean hasResult = false;

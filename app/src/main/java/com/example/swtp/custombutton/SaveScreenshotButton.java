@@ -17,6 +17,10 @@ public class SaveScreenshotButton extends ScreenshotButton {
         super(context, attrs);
     }
 
+    /**
+     * method for saving images in the android gallery
+     * @param screenshot    bitmap of image
+     */
     public void storeScreenShot(Bitmap screenshot) {
         String root = Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_PICTURES).toString();

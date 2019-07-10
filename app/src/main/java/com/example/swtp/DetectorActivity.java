@@ -51,6 +51,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class DetectorActivity extends CameraActivity {
 
+
+    /**
+     * UITask is a AsyncTask for updating the resultview.
+     * Uses the class Homography to compute the current homography.
+     * @see com.example.swtp.openCV.Homography
+     **/
     private static class UITask extends AsyncTask {
         private WeakReference<DetectorActivity> activityReference;
         private Homography openCV = new Homography();
@@ -242,6 +248,12 @@ public class DetectorActivity extends CameraActivity {
         resultView = findViewById(R.id.resultView);
     }
 
+
+    /**
+     * Uses the image returned from {@code getRgbBytes()} and tries to find detections
+     * with the class {@code Classifier}. Stores the results in the datastructure {@code results]
+     * @see com.example.swtp.Classifier
+     **/
     @Override
     protected void processImage() {
 
@@ -287,6 +299,14 @@ public class DetectorActivity extends CameraActivity {
         recognitions = mappedRecognitions;
     }
 
+    /**
+     *Manages the processing of the image stream.
+     *Spins the spinner on the main view.
+     *Uses the recognition_buffer to cache the last recognitions. They are then used to extract the formulas.
+     *To change the interval of processing change AMOUNT_SSD and DETECTIONS_INTERVAL_SECONDS in the class Settings
+     * @see Settings
+     * @see com.example.swtp.recognition.FormulaExtractor
+     */
     protected void processLoop() {
         if (finishedCalc) {
             readyForNextImage();
@@ -398,6 +418,10 @@ public class DetectorActivity extends CameraActivity {
         results.clear();
     }
 
+    /**
+     * Changes the visibility of the spinner
+     * @param spin
+     */
     private void updateSpinner(boolean spin) {
         final int flag = spin ? View.VISIBLE : View.GONE;
         runOnUiThread(new Runnable() {
@@ -415,6 +439,11 @@ public class DetectorActivity extends CameraActivity {
         LOGGER.i("New UI Task initialized");
     }
 
+    /**
+     * Shows the Framelayout flash for a period of time.
+     * Looks like a flash.
+     * @param duration  time of flash in milliseconds
+     */
     private void flashScreen(int duration){
         if(flash == null){
             LOGGER.i("no flash found");
@@ -443,6 +472,12 @@ public class DetectorActivity extends CameraActivity {
         flash.startAnimation(fade);
     }
 
+    /**
+     *
+     * @param bitmap    source bitmap which will be rotated
+     * @param degrees   degrees°
+     * @return copy of source bitmap
+     */
     private Bitmap rotateBitmap(Bitmap bitmap, int degrees) {
         Matrix matrix = new Matrix();
         matrix.postRotate(degrees);

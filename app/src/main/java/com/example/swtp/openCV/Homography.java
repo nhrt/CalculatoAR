@@ -23,6 +23,19 @@ import java.util.List;
 public class Homography {
     private Logger LOGGER = new Logger();
 
+    /**
+     * Computes the homography between two bitmaps.
+     * Uses BRISK for detection and computing.
+     * Uses DescriptorMatcher to match the BRISK results.
+     * Uses Calib3d to findHomography
+     * Change param ratioThes to change threshold.
+     * @param img1  src bitmap
+     * @param img2  dst bitmap
+     * @see BRISK
+     * @see DescriptorMatcher
+     * @see Calib3d
+     * @return homography from img1 to img2
+     */
     public Mat findHomography(Bitmap img1, Bitmap img2){
         LOGGER.i("Searching homography");
 

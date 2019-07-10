@@ -8,13 +8,14 @@ import java.util.List;
 import java.util.ListIterator;
 
 public class Parser {
-
-    /*
-        method parse takes a ordered list of Recognitions.
-        1. correction of recoginitions with correctForumla
-        2. translation from corrected formula to a string
-        3. remove the tailing "equals" (necessary for mxparser
-        4. evaluate the formula as an expression and return the double value
+    /**
+     * method parse takes a ordered list of Recognitions.
+     *         1. correction of recoginitions with correctForumla
+     *         2. translation from corrected formula to a string
+     *         3. remove the tailing "equals" (necessary for mxparser
+     *         4. evaluate the formula as an expression and return the double value
+     * @param mappedRecognitions formula
+     * @return result of the formula
      */
     public double parse(List<Classifier.Recognition> mappedRecognitions){
         String string = formulaToString(correctFormula(mappedRecognitions));
@@ -30,7 +31,7 @@ public class Parser {
     }
 
 
-    /*
+    /**
         Method correctFormula changes tailing "minus" to a tailing "equals"
      */
     public List<Classifier.Recognition> correctFormula(List<Classifier.Recognition> mappedRecognitions){
@@ -46,7 +47,7 @@ public class Parser {
         return mappedRecognitions;
     }
 
-    /*
+    /**
         method formulaToString takes a List of Recognitions and translates it into a String
      */
     public String formulaToString(List<Classifier.Recognition> mappedRecognitions){
@@ -63,7 +64,7 @@ public class Parser {
         return result.toString();
     }
 
-    /*
+    /**
         method recognitionToChar takes a recognition and finds a fitting character
         "formula" gets translated to '~'
         default return value is a '~'

@@ -4,6 +4,7 @@ package com.example.swtp;
 import android.graphics.Bitmap;
 import android.graphics.RectF;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Generic interface for interacting with different recognition engines.
@@ -81,6 +82,20 @@ public interface Classifier {
             }
 
             return resultString.trim();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if(obj == this) return true;
+            if(obj == null || obj.getClass() != getClass()) return false;
+
+            Classifier.Recognition rec = (Classifier.Recognition) obj;
+            return rec.getTitle().equals(this.title) && rec.getLocation().equals(this.location);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(id,location);
         }
     }
 

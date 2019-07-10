@@ -11,8 +11,10 @@ import org.junit.runner.RunWith;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 @RunWith(AndroidJUnit4.class)
 public class ExtractionTest {
@@ -70,7 +72,11 @@ public class ExtractionTest {
         mappedRecognitions.add(new Classifier.Recognition("0","formula", 1f,new RectF(0f,0f,150f,150f)));
         mappedRecognitions.add(new Classifier.Recognition("1","formula", 1f,new RectF(51f,51f,100f,100f)));
         mappedRecognitions.add(new Classifier.Recognition("2","formula", 1f,new RectF(151f,151f,200f,200f)));
-        assertEquals(2,formulaExtractor.extract(mappedRecognitions).size());
+        List<List<Classifier.Recognition>> formulas = formulaExtractor.extract(mappedRecognitions);
+
+        assertEquals(2,formulas.size());
+        assertNotEquals("1",formulas.get(0).get(0).getId());
+        assertNotEquals("1",formulas.get(1).get(0).getId());
     }
 
     @Test

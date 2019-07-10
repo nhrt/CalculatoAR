@@ -20,6 +20,12 @@ public class ShareScreenshotButton extends ScreenshotButton {
         super(context, attrs);
     }
 
+    /**
+     * Uses an Intent to send a screenshot saved at location of the uri
+     * @see java.net.URI
+     * @see Intent
+     * @param uri   uri of the screenshot
+     */
     public void shareScreenShot(Uri uri) {
         final Uri finalUri = uri;
 
@@ -39,6 +45,12 @@ public class ShareScreenshotButton extends ScreenshotButton {
         thread.start();
     }
 
+    /**
+     * Saves the screenshot temporarily so it can be send.
+     * @param screenshot
+     * @param timestamp
+     * @return imagepPath of the saved screenshot
+     */
     public String saveScreenShot(Bitmap screenshot, long timestamp) {
         File imagePath = new File(Environment.getExternalStorageDirectory() + "/screenshot" + timestamp + ".png");
         FileOutputStream fos;

@@ -8,21 +8,21 @@ import com.example.swtp.env.Logger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 
 
 public class FormulaExtractor {
     private static final Logger LOGGER = new Logger();
+    
 
-    /*
-     Extract takes a List of Recognitions and extract every Recognition which is inside of a formula
-     Input-Type: List<Classifier.Recognition> mappedRecognitions
-     Return-Type:  List<List<Classifier.Recognition>> "A list of a list of objects belonging to a formula
-     -> every List-Item is a formula
-     -> the first element of every formula is the formula object itself
-     -> every object which is not in a formula gets deleted
-     -> if two formulas are overlapping, the smaller one gets deleted
+    /**
+     * Extract takes a List of Recognitions and extracts every Recognition which is inside of a formula.
+     * Every object which is not inside a formula will be removed. If two formulas are overlapping, the smaller one gets deleted.
+     * @param mappedRecognitions All recognitions which will be used
+     * @return List of formulas which are a list although. First object of ever< formula is the formula detection itself
      */
     public List<List<Classifier.Recognition>> extract(List<Classifier.Recognition> mappedRecognitions) {
         //LOGGER.i("Start Extracting Recognitions");
@@ -44,8 +44,8 @@ public class FormulaExtractor {
 
         //remove every formula which is a false detection
         if (formulas.size() > 1) {
-            List<List<Classifier.Recognition>> tmpList = new ArrayList<>();
-            List<List<Classifier.Recognition>> removedLists = new ArrayList<>();
+            Set<List<Classifier.Recognition>> goodFormulas = new HashSet<>();
+            Set<List<Classifier.Recognition>> removedFormulas = new HashSet<>();
             ListIterator<List<Classifier.Recognition>> iteratorFormulaA = formulas.listIterator();
             ListIterator<List<Classifier.Recognition>> iteratorFormulaB;
             Classifier.Recognition formulaA;
@@ -56,11 +56,11 @@ public class FormulaExtractor {
             while (iteratorFormulaA.hasNext()) {
                 listA = iteratorFormulaA.next();
                 formulaA = listA.get(0);
-                if (removedLists.contains(listA)) continue;
+                if (removedFormulas.contains(listA)) continue;
                 iteratorFormulaB = formulas.listIterator();
                 while (iteratorFormulaB.hasNext()) {
                     listB = iteratorFormulaB.next();
-                    if (removedLists.contains(listB)) continue;
+                    if (removedFormulas.contains(listB)) continue;
                     formulaB = listB.get(0);
                     if (!formulaA.equals(formulaB)) {
                         if (formulaA.getLocation().intersect(formulaB.getLocation())) {
@@ -68,20 +68,20 @@ public class FormulaExtractor {
                             areaA = (int) (formulaA.getLocation().height() * formulaA.getLocation().width());
                             areaB = (int) (formulaB.getLocation().height() * formulaB.getLocation().width());
                             if (areaA <= areaB) {
-                                if (!tmpList.contains(listA)) tmpList.add(listA);
-                                removedLists.add(listB);
+                                if(goodFormulas.contains(listA))goodFormulas.add(listB);
+                                removedFormulas.add(listA);
                             } else {
-                                if (!tmpList.contains(listB)) tmpList.add(listB);
-                                removedLists.add(listA);
+                                if(!goodFormulas.contains(listA)) goodFormulas.add(listA);
+                                removedFormulas.add(listB);
                             }
                         } else {
-                            if (!tmpList.contains(listA) && !removedLists.contains(listA))
-                                tmpList.add(listA);
+                            if(!removedFormulas.contains(listA) && !goodFormulas.contains(listA))
+                                goodFormulas.add(listA);
                         }
                     }
                 }
             }
-            formulas = tmpList;
+            formulas = new ArrayList<>(goodFormulas);
         }
 
         //order objects to fitting formulas
