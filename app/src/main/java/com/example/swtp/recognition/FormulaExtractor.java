@@ -29,20 +29,120 @@ public class FormulaExtractor {
         List<List<Classifier.Recognition>> formulas = new ArrayList<>();
 
 
-        //Find all "Formula" objects in the detections
-        ListIterator<Classifier.Recognition> iterator = mappedRecognitions.listIterator();
+        //find all formula-objects in the mappedRecognitions
         List<Classifier.Recognition> formula;
-        Classifier.Recognition tmp;
-        while (iterator.hasNext()) {
-            tmp = iterator.next();
-            if (tmp.getTitle().equals("formula")) {
+        for (Classifier.Recognition recognition : mappedRecognitions){
+            if(recognition.getTitle().equals("formula")){
                 formula = new ArrayList<>();
-                formula.add(tmp);
+                formula.add(recognition);
                 formulas.add(formula);
             }
         }
 
-        //remove every formula which is a false detection
+        //Filter found formulas
+        if(formulas.size() > 1){
+            Set<List<Classifier.Recognition>> goodFormulas = new HashSet<>();
+            Set<List<Classifier.Recognition>> removedFormulas = new HashSet<>();
+            Classifier.Recognition formulaA;
+            Classifier.Recognition formulaB;
+            for (List<Classifier.Recognition> formulaA_list : formulas){
+                formulaA = formulaA_list.get(0);
+                if(removedFormulas.contains(formulaA_list) || goodFormulas.contains(formulaA_list)){
+                    continue;
+                }
+                for (List<Classifier.Recognition> formulaB_list : formulas){
+                    if(removedFormulas.contains(formulaB_list)){
+                        continue;
+                    }
+                    formulaB = formulaB_list.get(0);
+                    if(!formulaA.equals(formulaB)){
+                        if(formulaA.getLocation().intersect(formulaB.getLocation())){
+                            int areaA = (int) (formulaA.getLocation().height() * formulaA.getLocation().width());
+                            int areaB = (int) (formulaB.getLocation().height() * formulaB.getLocation().width());
+                            if (areaA <= areaB) {
+                                goodFormulas.add(formulaB_list);
+                                removedFormulas.add(formulaA_list);
+                            } else {
+                                goodFormulas.add(formulaA_list);
+                                removedFormulas.add(formulaB_list);
+                            }
+                        }else{
+                            goodFormulas.add(formulaA_list);
+                        }
+                    }
+                }
+            }
+            formulas = new ArrayList<>(goodFormulas);
+        }
+
+        //order objects to fitting formulas
+        double threshold = 0.3;
+        RectF locationFormula;
+        for(Classifier.Recognition tmp : mappedRecognitions){
+            RectF tmpLoc = tmp.getLocation();
+            if (!tmp.getTitle().equals("formula")) {
+                for(List<Classifier.Recognition> currentFormula : formulas){
+                    locationFormula = currentFormula.get(0).getLocation();
+                    //Compare the middle of the object to to outer-bound of the formula
+                    // -> If inside of this formula-bounds then arrange to the formula
+                    if (locationFormula.contains(tmpLoc.centerX(), tmpLoc.centerY())) {
+                        //Check if same detection is already in formula
+                        if (currentFormula.size() < 2) {
+                            currentFormula.add(tmp);
+                        } else {
+                            RectF objLoc;
+                            boolean hadIntersection = false;
+                            Classifier.Recognition obj;
+                            int size = currentFormula.size();
+                            for (int j = 1; j < size; j++) {
+                                obj = currentFormula.get(j);
+                                objLoc = obj.getLocation();
+                                if (tmpLoc.intersect(objLoc)) {
+                                    hadIntersection = true;
+                                    float width = (objLoc.width() + tmpLoc.width()) / 2;
+                                    int div;
+                                    if (objLoc.right - tmpLoc.left > 0) {
+                                        //obj left hand side of tmp
+                                        div = (int) (objLoc.right - tmpLoc.left);
+                                    } else {
+                                        //obj right hand side of tmp
+                                        div = (int) (tmpLoc.right - objLoc.left);
+                                    }
+                                    double x = div / width;
+                                    if (x < threshold) {
+                                        currentFormula.add(tmp);
+                                    }
+                                }
+                            }
+                            if (!hadIntersection) {
+                                currentFormula.add(tmp);
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+
+        //Sort the formula horizontal
+        for (int i = 0; i < formulas.size(); i++) {
+            Collections.sort(formulas.get(i), new Comparator<Classifier.Recognition>() {
+                @Override
+                public int compare(Classifier.Recognition o1, Classifier.Recognition o2) {
+                    return (int) (o1.getLocation().left - o2.getLocation().left);
+                }
+            });
+        }
+
+
+        // LOGGER.i("Return Extracted Recognitions");
+        return formulas;
+    }
+}
+
+
+        /*
         if (formulas.size() > 1) {
             Set<List<Classifier.Recognition>> goodFormulas = new HashSet<>();
             Set<List<Classifier.Recognition>> removedFormulas = new HashSet<>();
@@ -83,71 +183,4 @@ public class FormulaExtractor {
             }
             formulas = new ArrayList<>(goodFormulas);
         }
-
-        //order objects to fitting formulas
-        iterator = mappedRecognitions.listIterator();
-        RectF locationFormula;
-        List<Classifier.Recognition> currentFormula;
-        while (iterator.hasNext()) {
-            tmp = iterator.next();
-            RectF tmpLoc = tmp.getLocation();
-            if (!tmp.getTitle().equals("formula")) {
-                for (int i = 0; i < formulas.size(); i++) {
-                    currentFormula = formulas.get(i);
-                    locationFormula = currentFormula.get(0).getLocation();
-                    //Compare the middle of the object to to outer-bound of the formula
-                    // -> If inside of this formula-bounds then arrange to the formula
-                    if (locationFormula.contains(tmpLoc.centerX(), tmpLoc.centerY())) {
-                        //Check if same detection is already in formula
-                        if (currentFormula.size() < 2) {
-                            currentFormula.add(tmp);
-                        } else {
-                            RectF objLoc;
-                            boolean hadIntersection = false;
-                            Classifier.Recognition obj;
-                            int size = currentFormula.size();
-                            for (int j = 1; j < size; j++) {
-                                obj = currentFormula.get(j);
-                                objLoc = obj.getLocation();
-                                if (tmpLoc.intersect(objLoc)) {
-                                    hadIntersection = true;
-                                    float width = (objLoc.width() + tmpLoc.width()) / 2;
-                                    int div;
-                                    if (objLoc.right - tmpLoc.left > 0) {
-                                        //obj left hand side of tmp
-                                        div = (int) (objLoc.right - tmpLoc.left);
-                                    } else {
-                                        //obj right hand side of tmp
-                                        div = (int) (tmpLoc.right - objLoc.left);
-                                    }
-                                    double x = div / width;
-                                    if (x < 0.3) {
-                                        currentFormula.add(tmp);
-                                    }
-                                }
-                            }
-                            if (!hadIntersection) {
-                                currentFormula.add(tmp);
-                            }
-                        }
-
-                    }
-                }
-            }
-        }
-
-        //Sort the formula horizontal
-        for (int i = 0; i < formulas.size(); i++) {
-            Collections.sort(formulas.get(i), new Comparator<Classifier.Recognition>() {
-                @Override
-                public int compare(Classifier.Recognition o1, Classifier.Recognition o2) {
-                    return (int) (o1.getLocation().left - o2.getLocation().left);
-                }
-            });
-        }
-
-
-        // LOGGER.i("Return Extracted Recognitions");
-        return formulas;
-    }
-}
+        */
