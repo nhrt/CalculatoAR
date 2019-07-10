@@ -70,6 +70,7 @@ public class DetectorActivity extends CameraActivity {
             Mat homography = null;
 
             while (activity != null && !activity.isFinishing() && !isCancelled()) {
+
                 synchronized (this){
                     while(!activity.finishedCalc) {
                         try {
@@ -322,7 +323,6 @@ public class DetectorActivity extends CameraActivity {
                     results.add(new Pair<>(String.valueOf(result), location));
                 }
             }
-
             if(finishedCalc){
                 synchronized (resultThread){
                     resultThread.notify();
