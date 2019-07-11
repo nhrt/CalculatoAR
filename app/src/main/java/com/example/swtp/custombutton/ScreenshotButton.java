@@ -56,13 +56,14 @@ public abstract class ScreenshotButton extends FloatingActionButton {
         int displayWidth = dm.widthPixels;
         int displayHeight = dm.heightPixels;
 
+        float left, top;
         synchronized (results) {
-            RectF pos;
             for (Pair<String, RectF> result : results) {
-                pos = result.second;
-                pos.right = pos.right / displayWidth * width;
-                pos.bottom = pos.bottom / displayHeight * height;
-                canvas.drawText(result.first, result.second.right, result.second.bottom, paint);
+                left = result.second.right;
+                top = result.second.bottom;
+                left = left / displayWidth * width;
+                top = top / displayHeight * height;
+                canvas.drawText(result.first, left, top, paint);
             }
         }
 

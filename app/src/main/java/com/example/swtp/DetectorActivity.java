@@ -75,22 +75,21 @@ public class DetectorActivity extends CameraActivity {
             Bitmap srcImg;
             Mat homography = null;
 
-            while (activity != null && !activity.isFinishing() && !isCancelled()) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
-                synchronized (this){
-                    while(!activity.finishedCalc) {
-                        try {
-                            dstImg = null;
-                            this.wait();
-                        } catch (InterruptedException e) {
-                            LOGGER.i("UITask interrupted while waiting");
-                            return null;
-                        }
-                    }
+            while (activity != null && !activity.isFinishing() && !isCancelled()) {
+                if (!activity.gotSolution) {
+                    dstImg = null;
+                    continue;
                 }
+
                 if (dstImg != null) {
                     srcImg = dstImg;
-                } else {
+                } else{
                     srcImg = Bitmap.createBitmap(activity.getRgbBytes(), 0, activity.previewWidth, activity.previewWidth, activity.previewHeight, Bitmap.Config.ARGB_8888);
                     srcImg = activity.rotateBitmap(srcImg, 90);
                 }
@@ -170,6 +169,8 @@ public class DetectorActivity extends CameraActivity {
     private ResultView resultView;
     private ProgressBar spinner;
     private FrameLayout flash;
+    private boolean isWaiting = false;
+    boolean gotSolution = false;
 
     @Override
     protected Size getDesiredPreviewFrameSize() {
@@ -308,11 +309,11 @@ public class DetectorActivity extends CameraActivity {
      * @see com.example.swtp.recognition.FormulaExtractor
      */
     protected void processLoop() {
-        if (finishedCalc) {
+        if (isWaiting) {
             readyForNextImage();
             return;
         }
-        //boolean gotSolution = false;
+        gotSolution = false;
 
         if (counter < Settings.AMOUNT_SSD) {
             counter++;
@@ -338,25 +339,22 @@ public class DetectorActivity extends CameraActivity {
                 RectF location = formula.get(formula.size() - 1).getLocation();
 
                 if (!Double.isNaN(result) && location != null) {
-                    finishedCalc = true;
+                    gotSolution = true;
                     LOGGER.i("Result: %s Location: x %f  y %f", String.valueOf(result), location.right, location.bottom);
                     results.add(new Pair<>(String.valueOf(result), location));
                 }
             }
-            if(finishedCalc){
-                synchronized (resultThread){
-                    resultThread.notify();
-                }
-            }
-            updateSpinner(!finishedCalc);
+
+            updateSpinner(false);
+            isWaiting = true;
 
             new Handler().postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    finishedCalc = false;
+                    isWaiting = false;
                     updateSpinner(true);
                 }
-            }, finishedCalc ? Settings.DETECTION_INTERVAL_SECONDS * 1000 : 0);
+            }, gotSolution ? Settings.DETECTION_INTERVAL_SECONDS * 1000 : 0);
 
             readyForNextImage();
         }
@@ -415,6 +413,7 @@ public class DetectorActivity extends CameraActivity {
         resultThread.cancel(true);
         counter = 0;
         finishedCalc = false;
+        isWaiting = false;
         results.clear();
     }
 
