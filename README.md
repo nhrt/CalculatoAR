@@ -1,88 +1,39 @@
 # CalculatoAR
-Developing a formula solving AR app
 
-Erste Notizen
+CalculatoAR is a augmented reality, android app to detect and solve mathematic formulas in a live video stream.
+The app uses tensorflow to detect the formulas and mxParser to solve the detected formulas. OpenCV is used to calculate the current homography.
+The minimum SDK-Version is 21.
 
-Anforderungen nach Prioritäten  
-Frameworks 
-Storys schreiben und Zeitaufwand einschätzen, Storys aufteilen  
-Git Repo anlegen  
-Git Funktionen lernen, Branchen anschauen, Konflikte  
-Mockup  
-  
-  
-Anforderungen  
-  
-Grundfunktionen:  
-Kamera Bild  
-Texterkennung   
-+-*/ = erkennen und Ergbnis anzeigen ohne Perspektive  
-Bedingung: dunkle Schrift auf hellem Grund  
+## Tensorflow
 
-Erweiterte Funktionen:  
-Perspektive beachten  
-Position des Ergebnisses  
-kompliziertere Formeln (Kurvendiskussion)  
-Bedingung: Farbkontraste erkennen  
-  
-niedrige Prio:  
-Teilen, speichern, Formeln parallel,   
+![image](image/TFlite_Diagram.png)
 
+1. DataSet<br>
+   We created our own DataSet with roundabout 400 images. Each image needed to labled.
+2. Record<br>
+   With the labeled DataSet we were able to create a record for a training and testing set. This files included data of the positioning and the name of the labels. With this files we trained our model
+3. Single-Shot-Detection<br>
+   We chose a single shot detection for out mobile app. It is fast and works perfectly with tensorflow lite.
+4. Checkpoints<br>
+   In the process of training tensorflow creates chseckpoints with saved weight-values which were used for the neural network.
+5. Graph<br>
+   We created a graph with the latest checkpoint.
+6. Tensorflow lite<br>
+   Tensorflow lite is the way to go for a fast mobile app. To use it the *.pb graph needs to be formatted to lite or tflite file.
 
+All scripts for formatting and training can be found on the official tensorflow repository
 
+## mxParser
+mxParser is a math expression parser for android. It is easy to use and fast. It runs on the device locally, no api needed. The applicaton uses it to solve the detected formulas.
 
-*************Git-Befehle********************************************
+## OpenCV
+OpenCV is an open source computer vision and machine learning software library. It is able to detect and compute a homography between two images.
 
-Zu Beginn einer neuen Featureentwicklung:
+## Developers
+Christoph Schimpf<br>
+Niklas Hartinger<br>
+Sophie Ross<br>
+Dennis Preis<br>
 
-git fetch  
-git checkout <branchname>  
-git rebase origin/...  
-//gegebenenfalls Konflikte manuell beseitigen  
-//dann fortsetzen mit git rebase --continue  
-
-Zum Ende einer neuen Featureentwicklung:  
-git fetch  
-git checkout <branchname>  
-git rebase origin/....  
-//gegebenenfalls Konflikte manuell beseitigen  
-//dann fortsetzen mit git rebase --continue  
-git push origin <branchname>  
-//Wichtig: Erst nach endgültigem Abschluss pushen, sonst gibt es Probleme mit git rebase  
-//Sonst kann dieses nicht verwendet werden.  
-Merge-Request erstellen  
-  
- Quelle: https://wiki.thm.de/SWT-P_SS_2016_Augmented_Reality(1)  
- 
- Commits zusammenfassen:  
- 
- Man kann mit einem interaktiven Rebase auch mehrere Commits zu einem einzelnen Commit zusammenfassen. Im Skript der Rebase-Nachricht steht eine Anleitung, wie Du dazu vorgehen musst.  
- 
-Wenn Du statt „pick“ oder „edit“, den Befehl „squash“ angibst, führt Git beide Commits zu einem gemeinsamen Commit zusammen und bietet Dir die Möglichkeit, die Commit-Nachricht ebenso entsprechend zu verheiraten. Wenn Du also aus den drei Commits einen einzelnen Commit machen willst, muss Dein Skript folgendermaßen aufgebaut sein:  
-
-pick f7f3f6d changed my name a bit  
-squash 310154e updated README formatting and added blame  
-squash a5f4a0d added cat-file  
-
-Nach dem Speichern und Beenden des Editors, führt Git alle drei Änderungen zu einem einzelnen Commit zusammen und öffnet einen Texteditor, der alle drei Commit-Nachrichten enthält  
-
-Quelle: https://git-scm.com/book/de/v1/Git-Tools-%C3%84nderungshistorie-ver%C3%A4ndern  
- 
- Bei Merge-Conflict:  
- 
-Git führt beim Merge Änderungen automatisch zusammen, sofern unterschiedliche Dateien oder unterschiedliche Stellen in der selben Datei betroffen sind. Wurden in beiden Branches Änderungen an denselben Code-Zeilen committet, führt dies beim Merge zum Konflikt.  
- 
-git versieht dann die konfliktbehafteten Stellen in den Dateien mit Markern - oben steht der aktive Branch, unten der zu mergende Branch  
-
-Um den Merge abzuschließen, müssen die Konflikte behoben, die Marker entfernt, die Dateien dem Index hinzugefügt und die Änderungen committet werden.  
-
-Dabei ist zu beachten, dass Git währenddessen im Merge-Modus ist, zu erkennen am Kommandozeilen-Prompt. Dieser Modus wird erst wieder verlassen, wenn der Merge durchgeführt wurde; keinesfalls sollte man in diesem Zustand weiterarbeiten. Alternativ kann der Merge abgebrochen werden mit: $ git merge --abort  
-
-Praktischerweise ist wiederholtes Mergen bei Git kein Problem. Da die bereits erfolgten Merges in der Historie dokumentiert sind, wird git nur die noch fehlenden Commits übernehmen.  
-
-Quelle: https://www.ralfebert.de/git/mergekonflikte-beheben/  
- 
- ********************************************************************
- 
- 
- 
+## Credit
+Special credit to Daniel Vogel for his support.
